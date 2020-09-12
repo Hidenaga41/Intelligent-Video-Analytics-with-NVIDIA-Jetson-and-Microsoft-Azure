@@ -10,9 +10,9 @@ If you wish to follow along with the steps in this module, we have recorded a li
 
 ## Module 4.1 : Recreating the Azure Stream Analytics job in Microsoft Azure
 
-Up to this point, our [deployment template references an Azure Stream Analytics job](https://github.com/toolboc/Intelligent-Video-Analytics-with-NVIDIA-Jetson-and-Microsoft-Azure/blob/master/deployment-iothub/deployment.template.json#L240) that exists in a foreign Azure subscription.  These steps will walk through recreating that job under our own Azure Subscription and provide an in-depth explanation of the functionality that it provides to our solution.  This should provide you with enough knowledge to begin customizing the supplied Stream Analytics Query to your preference.  We will then demonstrate how to update our current configuration to reference the newly created Azure Stream Analytics job.
+ここまでのところ、[配置テンプレートは、外国の Azure サブスクリプションに存在する Azure Stream Analytics ジョブを参照しています](https://github.com/toolboc/Intelligent-Video-Analytics-with-NVIDIA-Jetson-and-Microsoft-Azure/blob/master/deployment-iothub/deployment.template.json#L240)。 この手順では、独自の Azure サブスクリプションの下でそのジョブを再作成し、そのジョブがソリューションに提供する機能の詳細な説明を行います。 これにより、提供されているStream Analytics Queryを好みに合わせてカスタマイズし始めるのに十分な知識が得られるはずです。 次に、新しく作成したAzure Stream Analyticsジョブを参照するために、現在の設定を更新する方法を実演します。
 
-Navigate to the Azure Marketplace and search for 'Azure Stream Analytics on IoT Edge' 
+Azureマーケットプレイスに移動し、「Azure Stream Analytics on IoT Edge」を検索します。
 
 ![Azure SAS on Edge Marketplace](../assets/AzureSASonEdgeMarketplace.PNG)
 
@@ -21,17 +21,16 @@ Select "Create":
 ![Create Azure SAS on Edge](../assets/CreateSASonEdge.PNG)
 
 
-Name the Stream Analytics Job, ensure that it is deployed into the same region as the original IoT Hub,  ensure Hosting environment is set to "Edge", and ensure that the box labeled "Secure all private data assets needed by this job in my Storage account" is unchecked, then select "Create":
+Stream Analyticsジョブに名前を付け、元のIoT Hubと同じ地域に配置されていることを確認し、ホスティング環境が「Edge」に設定されていることを確認し、「このジョブが必要とするすべてのプライベートデータ資産を私のストレージアカウントに確保する」というラベルの付いたボックスがチェックされていないことを確認してから、「Create」を選択します。
 
 ![Deploy Azure SAS on Edge](../assets/DeploySASonEdge.PNG)
 
-Navigate to the newly created job and select "Inputs", here will configure the input alias used in the [deployment template route configuration](https://github.com/toolboc/Intelligent-Video-Analytics-with-NVIDIA-Jetson-and-Microsoft-Azure/blob/master/deployment-iothub/deployment.template.json#L210).  This setting is important as it configures the NVIDIADeepStreamSDK output to flow into the DeepStreamAnalytics module as an input.  Naming is extremely important in this step and must match the alias used in the route configuration.  
+新しく作成されたジョブに移動し、”Inputs"を選択します。ここでは、 [deployment template route configuration](https://github.com/toolboc/Intelligent-Video-Analytics-with-NVIDIA-Jetson-and-Microsoft-Azure/blob/master/deployment-iothub/deployment.template.json#L210)で使用される入力エイリアスを構成します。 NVIDIADeepStreamSDK出力が入力としてDeepStreamAnalyticsモジュールに流れるように構成するため、この設定は重要です。 このステップでは名前付けが非常に重要で、ルート構成で使用されるエイリアスと一致している必要があります。 
 
-Select, "Add stream input" and name the "Input Alias" to "DeepStreamInput" as shown:
-
+"Add stream input "を選択し、"Input Alias "に "DeepStreamInput "という名前を付けます。
 ![Azure SAS on Edge Input](../assets/AzureSASonEdgeInput.PNG)
 
-Next, navigate to "Output", where where we will will configure the output alias used in the [deployment template route configuration](https://github.com/toolboc/Intelligent-Video-Analytics-with-NVIDIA-Jetson-and-Microsoft-Azure/blob/master/deployment-iothub/deployment.template.json#L211).  This setting is important as it configures the DeepStreamAnalytics Streaming Analytics job output to flow to our IoT Hub.  Naming is extremely important in this step and must match the alias used in the route configuration.  
+次に、[deployment template route configuration](https://github.com/toolboc/Intelligent-Video-Analytics-with-NVIDIA-Jetson-and-Microsoft-Azure/blob/master/deployment-iothub/deployment.template.json#L211)で使用する出力エイリアスを設定する"出力"に移動します。 この設定は、DeepStreamAnalytics Streaming Analyticsのジョブ出力がIoTハブに流れるように構成するために重要です。 このステップでは名前の付け方が非常に重要で、ルート構成で使用するエイリアスと一致している必要があります。 
 
 Select, "Add" then "Edge Hub" as shown below:
 ![Azure SAS on Edge Output](../assets/AzureSASonEdgeOutput.PNG)
