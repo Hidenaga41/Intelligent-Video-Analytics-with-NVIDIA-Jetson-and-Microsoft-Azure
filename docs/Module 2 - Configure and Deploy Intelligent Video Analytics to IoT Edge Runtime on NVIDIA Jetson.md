@@ -1,40 +1,44 @@
 ## Module 2 : Configure and Deploy "Intelligent Video Analytics" to IoT Edge Runtime on NVIDIA Jetson
 
-In this section we will install and configure the [IoT Edge Runtime](https://docs.microsoft.com/en-us/azure/iot-edge/about-iot-edge?WT.mc_id=julyot-iva-pdecarlo) on an NVIDIA Jetson Device.  This will require that we deploy a collection of Azure Services to support the modules that are defined in the associated [IoT Edge Deployment for IoT Hub](../deployment-iothub/deployment.template.json).
+このセクションでは、NVIDIA Jetson デバイスに [IoT Edge Runtime](https://docs.microsoft.com/en-us/azure/iot-edge/about-iot-edge?WT.mc_id=julyot-iva-pdecarlo)をインストールして設定します。これには、関連する [IoT Edge Deployment for IoT Hub](../deployment-iothub/deployment.template.json) で定義されているモジュールをサポートするために、Azure サービスのコレクションをデプロイする必要があります。
 
-If you take a close look at the deployment, you will notice that it includes the following modules:
+デプロイを見ると、以下のモジュールが含まれていることがわかります。
 
 | Module                    | Purpose                                                                                                                         | Backing Azure Service                                                    |
 |---------------------------|---------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------|
-| edgeAgent                 | System Module used by IoT Edge to deploy and ensure uptime of modules defined in device deployment                              | [Azure IoT Hub](https://docs.microsoft.com/en-us/azure/iot-hub/?WT.mc_id=julyot-iva-pdecarlo) (Authorization and for obtaining deployment configuration) |
-| edgeHub                   | System Module responsible for inter-module communication and message back to Azure IoT Hub                                       | [Azure IoT Hub](https://docs.microsoft.com/en-us/azure/iot-hub/?WT.mc_id=julyot-iva-pdecarlo) (Ingestion of Device to Cloud Telemetry)                   |
-| NVIDIADeepStreamSDK       | Custom Module which runs DeepStream workload, output is forwarded to DeepStreamAnalytics Module for summarization               | Telemetry is routed to DeepStreamAnalytics module (see: [IoT Edge - Declare Routes](https://docs.microsoft.com/en-us/azure/iot-edge/module-composition#declare-routes?WT.mc_id=julyot-iva-pdecarlo)) where it is filtered and forwarded to an [Azure IoT Hub](https://docs.microsoft.com/en-us/azure/iot-hub/?WT.mc_id=julyot-iva-pdecarlo)                                                                     |
-| CameraTaggingModule       | Custom Module for obtaining images from available RTSP sources for use in Training Custom Object Detection Models               | [CustomVision.AI](https://www.customvision.ai/?WT.mc_id=julyot-iva-pdecarlo) for exporting of captured images for use in training Custom Object Detection model(s)                        |
-| azureblobstorageoniotedge | Custom Module for providing replication of data to a backing Azure Storage Account                                              | [Azure Storage Account](https://docs.microsoft.com/en-us/azure/storage/?WT.mc_id=julyot-iva-pdecarlo) for replication and long-term storage of captured images   |
-| DeepStreamAnalytics       | Custom Module that employs "Stream Analytics on IoT Edge" Module to Summarize Object Detection Results from NVIDIADeepStreamSDK | [Azure Stream Analytics on Edge](https://docs.microsoft.com/en-us/azure/stream-analytics/stream-analytics-edge?WT.mc_id=julyot-iva-pdecarlo) Job defined and served from Azure                                   |
+| edgeAgent                 | デバイスデプロイで定義されたモジュールのデプロイとアップタイムを確保するためにIoT Edgeで使用されるシステムモジュール                               | [Azure IoT Hub](https://docs.microsoft.com/en-us/azure/iot-hub/?WT.mc_id=julyot-iva-pdecarlo) (認証とデプロイ構成を取得するためのもの) |
+| edgeHub                   | モジュール間の通信とAzure IoT Hubへのメッセージバックを担当するシステムモジュール                                       | [Azure IoT Hub](https://docs.microsoft.com/en-us/azure/iot-hub/?WT.mc_id=julyot-iva-pdecarlo) (デバイスからクラウドテレメトリへの取り込み)                   |
+| NVIDIADeepStreamSDK       | DeepStreamワークロードを実行し、出力は要約のためにDeepStreamAnalyticsモジュールに転送するためのモジュール               | テレメトリはDeepStreamAnalyticsモジュールにルーティングされ（参照：[IoT Edge - Declare Routes](https://docs.microsoft.com/en-us/azure/iot-edge/module-composition#declare-routes?WT.mc_id=julyot-iva-pdecarlo)）、そこでフィルタリングされ、[Azure IoT Hub](https://docs.microsoft.com/en-us/azure/iot-hub/?WT.mc_id=julyot-iva-pdecarlo)に転送されます。                                                                    |
+| CameraTaggingModule       | カスタム物体検出モデルのトレーニングに使用するために利用可能なRTSPソースから画像を取得するためのカスタムモジュール               | カスタム物体検出モデルのトレーニングに使用するためにキャプチャした画像をエクスポートするための [CustomVision.AI](https://www.customvision.ai/?WT.mc_id=julyot-iva-pdecarlo)             |
+| azureblobstorageoniotedge |  Azure Storage Account へのデータのレプリケーションを提供するためのカスタムモジュール                                              | キャプチャした画像のレプリケーションと長期保存のための [Azure Storage Account](https://docs.microsoft.com/en-us/azure/storage/?WT.mc_id=julyot-iva-pdecarlo)   |
+| DeepStreamAnalytics       | NVIDIADeepStreamSDKからのオブジェクト検出結果をまとめる「Stream Analytics on IoT Edge」モジュールを採用したカスタムモジュール | [Azure Stream Analytics on Edge](https://docs.microsoft.com/en-us/azure/stream-analytics/stream-analytics-edge?WT.mc_id=julyot-iva-pdecarlo) ジョブの定義とAzureからの提供                                   |
 
-In this section, we will only need to deploy an [Azure IoT Hub](https://docs.microsoft.com/en-us/azure/iot-hub/?WT.mc_id=julyot-iva-pdecarlo) and [Azure Storage Account](https://docs.microsoft.com/en-us/azure/storage/?WT.mc_id=julyot-iva-pdecarlo). If you are curious about the pricing involved for these services, they are summarized below:
 
-* [IoT Hub Pricing](https://azure.microsoft.com/en-us/pricing/details/iot-hub/?WT.mc_id=julyot-iva-pdecarlo)
+
+ここでは、[Azure IoT Hub](https://docs.microsoft.com/en-us/azure/iot-hub/?WT.mc_id=julyot-iva-pdecarlo)と[Azure Storage Account](https://docs.microsoft.com/en-us/azure/storage/?WT.mc_id=julyot-iva-pdecarlo)をデプロイするだけです。これらのサービスの価格について気になる方は、以下にまとめてみました。
+
+* [IoT Hubの価格](https://azure.microsoft.com/en-us/pricing/details/iot-hub/?WT.mc_id=julyot-iva-pdecarlo)
 * [Azure Storage Account](https://github.com/toolboc/Intelligent-Video-Analytics-with-NVIDIA-Jetson-and-Microsoft-Azure?WT.mc_id=julyot-iva-pdecarlo)
-* [Azure Stream Analytics on Edge Pricing](https://azure.microsoft.com/en-us/pricing/details/stream-analytics/?WT.mc_id=julyot-iva-pdecarlo) (Technically, even though we are using a job that is not contained in the end-users subscription, billing does occur per device that runs the DeepStreamAnalytics Module)
+* [Azure Stream Analytics on Edge の価格設定](https://azure.microsoft.com/en-us/pricing/details/stream-analytics/?WT.mc_id=julyot-iva-pdecarlo) (技術的には、エンドユーザーのサブスクリプションに含まれていないジョブを使用しているにもかかわらず、課金はDeepStreamAnalyticsモジュールを実行するデバイスごとに発生します。)
 
-The additional services, [CustomVision.AI](https://www.customvision.ai/?WT.mc_id=julyot-iva-pdecarlo) and [Azure Stream Analytics on Edge](https://docs.microsoft.com/en-us/azure/stream-analytics/stream-analytics-edge?WT.mc_id=julyot-iva-pdecarlo), will be addressed in upcoming sections and will not be needed at this time.  
+追加サービスである[CustomVision.AI](https://www.customvision.ai/?WT.mc_id=julyot-iva-pdecarlo)と[Azure Stream Analytics on Edge](https://docs.microsoft.com/en-us/azure/stream-analytics/stream-analytics-edge?WT.mc_id=julyot-iva-pdecarlo)については、今後のセクションで説明しますので、現時点では必要ありません。
 
-If you wish to follow along with the steps in this module, we have recorded a livestream presentation titled "[Configure and Deploy "Intelligent Video Analytics" to IoT Edge Runtime on NVIDIA Jetson](https://www.youtube.com/watch?v=RKwwP4XsZdw)" that walks through the steps below in great detail.
+このモジュールのステップに沿って進みたい場合は、「[Configure and Deploy "Intelligent Video Analytics" to IoT Edge Runtime on NVIDIA Jetson](https://www.youtube.com/watch?v=RKwwP4XsZdw)」と題した、以下のステップを詳細に説明するライブストリームプレゼンテーションを録画しました。
 
 [![Configure and Deploy "Intelligent Video Analytics" to IoT Edge Runtime on NVIDIA Jetson](../assets/LiveStream2.PNG)](https://www.youtube.com/watch?v=RKwwP4XsZdw)
 
 
 ### Module 2.1 : Install IoT Edge onto the Jetson  Device
 
-Before we install IoT Edge, we need to install a few utilities onto the Nvidia Jetson device with:
+IoT Edgeをインストールする前に、いくつかのユーティリティをNvidia Jetsonデバイスにインストールする必要があります。
 
 ```
 sudo apt-get install -y curl nano 
 ```
 
 ARM64 builds of IoT Edge that are compatible with NVIDIA Jetson Hardware are provided beginning in the [1.0.8 release tag](https://github.com/Azure/azure-iotedge/releases/tag/1.0.8) of IoT Edge.  To install the latest release of IoT Edge, run the following from a terminal on your Nvidia Jetson device or consult the [official documentation](https://docs.microsoft.com/en-us/azure/iot-edge/how-to-install-iot-edge-linux?WT.mc_id=julyot-iva-pdecarlo):
+
+NVIDIA Jetson Hardwareと互換性のあるIoT EdgeのARM64ビルドは、IoT Edgeの[1.0.8 release tag](https://github.com/Azure/azure-iotedge/releases/tag/1.0.8)から提供されています。IoT Edgeの最新リリースをインストールするには、Nvidia Jetsonデバイスのターミナルから以下を実行するか、[公式ドキュメント](https://docs.microsoft.com/en-us/azure/iot-edge/how-to-install-iot-edge-linux?WT.mc_id=julyot-iva-pdecarlo)を参照してください。
 
 ```
 # You can copy the entire text from this code block and 
@@ -58,7 +62,7 @@ sudo apt-get install iotedge
 
 ```
 
-After installation, you will receive the following message indicating the need to update the device's configuration, we'll address this in the next step:
+インストール後、デバイスの設定を更新する必要があることを示す以下のメッセージが表示されます。
 
 ```
 ===============================================================================
@@ -87,17 +91,17 @@ After installation, you will receive the following message indicating the need t
 
 ### Module 2.2 : Provision the IoT Edge Runtime on the Jetson Device
 
-In this section, we will manually provision our Jetson hardware as an IoT Edge device.  To accomplish this, we will need to deploy an active IoT Hub which we will use to register a new IoT Edge device and from there obtain a device connection string that we will allow us to securely authenticate to the IoT Hub instance. 
+このセクションでは、Jetson ハードウェアを IoT Edge デバイスとして手動でプロビジョニングします。このためには、アクティブな IoT Hub をデプロイして、新しい IoT Edge デバイスを登録し、そこから IoT Hub インスタンスへの安全な認証を可能にするデバイス接続文字列を取得する必要があります。
 
-You can create a new IoT Hub, register an IoT Edge device, and obtain the device connection string needed to accomplish this by following the documentation for [Registering an IoT Edge device in the Azure Portal](https://docs.microsoft.com/en-us/azure/iot-edge/how-to-register-device-portal?WT.mc_id=julyot-iva-pdecarlo) or by [Registering an IoT Edge device with the Azure-CLI](https://docs.microsoft.com/en-us/azure/iot-edge/how-to-register-device-cli?WT.mc_id=julyot-iva-pdecarlo).
+新しいIoT Hubを作成し、IoT Edgeデバイスを登録し、[AzureポータルでIoT Edgeデバイスを登録](https://docs.microsoft.com/en-us/azure/iot-edge/how-to-register-device-portal?WT.mc_id=julyot-iva-pdecarlo)するためのドキュメントに従うか、[Azure-CLIでIoT Edgeデバイスを登録](https://docs.microsoft.com/en-us/azure/iot-edge/how-to-register-device-cli?WT.mc_id=julyot-iva-pdecarlo)することで、これを達成するために必要なデバイス接続文字列を取得することができます。
 
-Once you have obtained a connection string, open the IoT Edge device configuration file:
+接続文字列を取得したら、IoT Edgeのデバイス設定ファイルを開きます。
 
 ```
 sudo nano /etc/iotedge/config.yaml
 ```
 
-Find the provisioning section of the file and uncomment the manual provisioning mode. Update the value of `device_connection_string` with the connection string from your IoT Edge device.
+ファイルのプロビジョニングセクションを見つけ、手動プロビジョニングモードのコメントを外します。`device_connection_string` の値をIoT Edgeデバイスからの接続文字列で更新します。
 
 ```
 provisioning:
@@ -112,36 +116,35 @@ provisioning:
 
 ```
 
-After you have updated the value of `device_connection_string`, restart the iotedge service with:
+`device_connection_string`の値を更新したら、以下のコマンドでiotedgeサービスを再起動してください。
 
 ```
 sudo service iotedge restart
 ```
 
-You can check the status of the IoT Edge Daemon using:
+以下のコマンドを使ってIoT Edge Daemonの状態を確認することができます。
 
 ```
 systemctl status iotedge
 ```
 
-Examine daemon logs using:
+以下のコマンドで，デーモンのログを調べます。
 ```
 journalctl -u iotedge --no-pager --no-full
 ```
 
-And, list running modules with:
-
+以下のコマンドで，実行中のモジュールをリストアップします。
 ```
 sudo iotedge list
 ```
 
-To ensure that the IoT Edge Runtime is configured and running:
+以下のコマンドで，IoT Edge Runtimeが設定され、実行されていることを確認します．
 
 ```
 sudo service iotedge status
 ```
 
-A successfully configured device should report output similar to the following, if there are any errors, double-check the configuration has been set appropriately:
+正常に設定されたデバイスは、以下のような出力が確認されます。エラーがある場合は、設定が適切に設定されていることを再確認してください。
 
 ```
 ● iotedge.service - Azure IoT Edge daemon
@@ -154,76 +157,77 @@ A successfully configured device should report output similar to the following, 
            └─9029 /usr/bin/iotedged -c /etc/iotedge/config.yaml
 ```
 
-The IoT Edge runtime will begin pulling down the edgeAgent and edgeHub system modules.  These modules will run by default until we supply a deployment configuration containing additional modules.
+IoT Edgeランタイムは、edgeAgentとedgeHubシステムモジュールのプルダウンを開始します。 これらのモジュールは、追加モジュールを含むデプロイ構成を提供するまで、デフォルトで実行されます。
+
 
 ### Module 2.3 : Prepare the Jetson Device to use the "Intelligent Video Analytics" sample configurations
 
-In this module, we will mirror the sample configurations contained in this repo onto the Jetson device.  This will require that we leverage some very specific paths that are referenced in those configurations, so be sure to follow these steps exactly as they are described.  
+このモジュールでは、このリポジトリに含まれるサンプル設定を Jetson デバイスにミラーリングします。 そのためには、これらの設定で参照されている非常に特殊なパスを利用する必要があります。 
 
-We will begin by creating a directory to store the configuration on the Jetson device with:
+まず、Jetson デバイス上に設定を保存するためのディレクトリを作成します。
 
 ```
 sudo mkdir -p /data/misc/storage
 ```
 
-Next, we will configure the `/data` directory and all subdirectories to be accessible from a non-privileged user account with:
+次に、`/data`ディレクトリとすべてのサブディレクトリに、非特権ユーザアカウントからアクセスできるように設定します。
 
 ```
 sudo chmod -R 777 /data
 ```
 
-Next, we will navigate to `/data/misc/storage` with:
+次に、`/data/misc/storage`に移動します。
 ```
 cd /data/misc/storage
 ```
 
-Then clone this repository to that directory with:
+そして，このリポジトリを，作成したディレクトリにクローンします。
 ```
 git clone https://github.com/toolboc/Intelligent-Video-Analytics-with-NVIDIA-Jetson-and-Microsoft-Azure.git
 ```
 
-Next, we need to configure the Jetson OS to allow for access to the X11 Window server from a container by granting local privileges to the X11 socket to the `iotedge` user account.
+次に、`iotedge`のユーザアカウントにX11ソケットのローカル権限を付与することで、コンテナからX11 WindowサーバにアクセスできるようにJetson OSを設定する必要があります。
 
 ```
 xhost local:iotedge
 ```
 
-This will activate the privileges for the current logged-in session, but will not persist on reboot. Make the configuration persistent by opening `/etc/profile` for editing with:
+これにより、現在のログインセッションの権限が有効になりますが、再起動時には持続しません。で編集できるように `/etc/profile` を開いて設定を永続化します。
 
 ```
 sudo nano /etc/profile
 ```
 
-Then append the following text to the very top of that file:
+そして、そのファイルの一番上に次のテキストを追加します。
 ```
 xhost local:iotedge
 ```
 
-On subsequent reboots, the `iotedge` user should now be able to spawn Graphical User Interfaces using the host X11 socket.  This will allow us to view the bounding-box detections of the DeepStreamSDK module while running as an IoT Edge module (i.e. while running as a container).
+その後の再起動時に、`iotedge`ユーザーはホストのX11ソケットを使用してグラフィカルユーザーインターフェースを生成できるようになります。 これにより、IoT Edgeモジュールとして実行中(つまりコンテナとして実行中)にDeepStreamSDKモジュールのバウンディングボックス検出を表示できるようになります。
 
-To make diagnosing potential issues easier, you will also want to enable access to the docker service from your user account.  This can be accomplished with:
+潜在的な問題の診断を容易にするために、ユーザーアカウントからのdockerサービスへのアクセスを有効にする必要があります。 これは、以下の方法で実現できます。
 
 ```
 sudo usermod -aG docker $USER
 ```
 
-On subsequent login sessions, you will now be able to invoke `docker` command without the need to prepend with `sudo`.
+以降のログインセッションでは、`sudo`を前置しなくても `docker` コマンドを起動できるようになりました。
 
-We have successfully prepared the Jetson Device to use the "Intelligent Video Analytics" sample configurations.  Next, we will configure the appropriate prerequisite Azure Storage Account and configuration needed for the Blob Storage Module (azureblobstorageoniotedge).
+これで、「Intelligent Video Analytics」のサンプル設定を使用するためのJetson Deviceの準備が完了しました。 次に、適切な前提条件であるAzure Storage Accountと、Blob Storage Module(azureblobstorageoniotedge)に必要な設定を行います。
 
 ### Module 2.4 : Configure the Blob Storage Module Dependencies
 
-In this step, we will configure the [IoT Edge Blob Storage Module](https://docs.microsoft.com/en-us/azure/iot-edge/how-to-deploy-blob?WT.mc_id=julyot-iva-pdecarlo) which is used in conjunction with the CameraTaggingModule to store image captures locally and replicate them to the cloud.  Technically, this module is optional and the CameraTaggingModule can upload images directly to the cloud or CustomVision.AI without it, but it gives a more robust solution for the end user that can capture and store images without the need for outbound internet access.  You can learn more about the Camera Tagging Module an it's supporting features in this [in-depth article](https://dev.to/azure/introduction-to-the-azure-iot-edge-camera-tagging-module-di8).
+このステップでは、CameraTaggingModuleと組み合わせて使用する[IoT Edge Blob Storage Module](https://docs.microsoft.com/en-us/azure/iot-edge/how-to-deploy-blob?WT.mc_id=julyot-iva-pdecarlo)を設定し、画像キャプチャをローカルに保存し、クラウドにレプリケートします。技術的には、このモジュールはオプションであり、CameraTaggingModuleはそれなしで直接クラウドまたはCustomVision.AIに画像をアップロードすることができますが、アウトバウンドのインターネットアクセスを必要とせずに画像をキャプチャして保存することができるエンドユーザーのためのより堅牢なソリューションを提供します。CameraTaggingModuleとそのサポート機能については、この[詳細な記事](https://dev.to/azure/introduction-to-the-azure-iot-edge-camera-tagging-module-di8)を参照してください。
 
-This module will require the use of Visual Studio Code, preferably running on a development machine that is not the Jetson device.  Begin by cloning this repository to your development machine by navigating into the directory of your choosing and running:
+このモジュールは、Visual StudioCodeを使用する必要があり、できればJetsonデバイスではない開発マシンで実行してください。このリポジトリを開発マシンにクローンすることから始めてください。
 
 ```
 git clone https://github.com/toolboc/Intelligent-Video-Analytics-with-NVIDIA-Jetson-and-Microsoft-Azure.git
 ```
 
-Next, Open Visual Studio Code, then select "File => Open Folder" then navigate to and select the newly created "Intelligent-Video-Analytics-with-NVIDIA-Jetson-and-Microsoft-Azure" folder.
+次に、Visual Studio Codeを開き、「ファイル⇒フォルダを開く」を選択し、新しく作成された「Intelligent-Video-Analytics-with-NVIDIA-Jetson-and-Microsoft-Azure」フォルダに移動して選択します。
 
- Within the newly opened project, create a file named .env in the `deployment-iothub` folder and supply it with the following contents:
+新しく開いたプロジェクトの中で、`deployment-iothub`フォルダ内に.envという名前のファイルを作成し、以下の内容を指定します。
 
 ```
 CONTAINER_REGISTRY_NAME=
@@ -233,39 +237,38 @@ DESTINATION_STORAGE_NAME=camerataggingmodulecloud
 CLOUD_STORAGE_CONNECTION_STRING=
 ```
 
-This file will will store key/value that are used to replace values in deployment.template.json to produce a working deployment manifest. You will notice these entries in the deployment.template.json are proceeded with the '$' symbol.  This marks them as tokens for replacement during the generation of the deployment manifest.
+このファイルには、deployment.template.jsonの値を置き換えるために使用されるキー/値が格納され、動作するデプロイメント マニフェストが作成されます。deployment.template.json のこれらのエントリには '$' 記号が付けられていることに気づくでしょう。 これは、デプロイメント マニフェストの生成中に置き換えるためのトークンとしてマークされます。
 
-For now, we will skip the `CONTAINER_REGISTRY_NAME` as that is only needed if you are pulling container images from a private repository.  Since the modules in our deployment are all publicly available, it is not needed at this time.
+今のところ、`CONTAINER_REGISTRY_NAME`はプライベートリポジトリからコンテナイメージを取得する場合にのみ必要なので、省略します。 このデプロイメントのモジュールはすべて公開されているので、現時点では必要ありません。
 
-Produce a value for `LOCAL_STORAGE_ACCOUNT_KEY` by visiting [GeneratePlus](https://generate.plus/en/base64).  This will generate a random base64 encoded string that will be used to configure a secure connection to the local blob storage instance.  You will want to supply the entire result, which should end with two equal signs (*==*).
+[GeneratePlus](https://generate.plus/en/base64)にアクセスして `LOCAL_STORAGE_ACCOUNT_KEY` の値を生成します。 これは、ローカル・ブロブ・ストレージ・インスタンスへの安全な接続を構成するために使用される、ランダムなbase64エンコードされた文字列を生成します。 結果全体を指定したい場合は、2つの等号(*==*)で終わるようにしてください。
 
-`LOCAL_STORAGE_ACCOUNT_NAME` is best left as-is, but you are welcome to rename it, provided that it follows the format for naming: The field can contain only lowercase letters and numbers and the name must be between 3 and 24 characters.
+`LOCAL_STORAGE_ACCOUNT_NAME` はそのままにしておくのがベストですが、名前を変更しても構いません。このフィールドには小文字と数字のみを含めることができ、名前は3文字から24文字の間でなければなりません。
 
-`DESTINATION_STORAGE_NAME` is supplied from an assumed-to-exist blob storage container in the Azure Cloud.  You can create this container by performing the following steps:
+`DESTINATION_STORAGE_NAME` は、Azureクラウドに存在すると仮定したブロブストレージコンテナから提供されます。 このコンテナは、以下の手順を実行することで作成できます。
 
-Navigate to the Azure Marketplace and search for 'blob', then select Storage Account - blob, file, table, queue
+Azureマーケットプレイスに移動して「blob」を検索し、ストレージアカウント - blob、ファイル、テーブル、キューを選択します。
 
 ![Storage Marketplace](../assets/AzureStorageMarkeplace.PNG)
 
-Create the Storage Account using settings similar to below (note: the Storage account name must be globally unique)
+以下のような設定を使用してストレージアカウントを作成します（注意：ストレージアカウント名はグローバルに一意でなければなりません）。
 
 ![Storage Create](../assets/AzureStorageCreate.PNG)
 
-Select "Review + Create" => "Create" to deploy the new Storage Account Resource.
+レビュー + 作成 => 「作成」を選択して、新しいストレージアカウントリソースを展開します。
 
-Navigate to your newly deployed Storage Account and select `Containers`:
-
+新しくデプロイしたストレージアカウントに移動し、`コンテナ`を選択します。
 ![Storage Overview](../assets/AzureStorageOverview.PNG)
 
-Create a new storage container named "camerataggingmodulecloud" as shown below (the name is important as it matches the value in the .env):
+以下のように「camerataggingmodulecloud」という名前の新しいストレージコンテナを作成します(.envの値と一致するので、名前は重要です)。
 
 ![New Container](../assets/AzureStorageContainerCreate.PNG)
 
-CLOUD_STORAGE_CONNECTION_STRING can be obtained by visiting your newly created Storage Account and selecting **Settings** => **Access Keys**.  Copy the entire contents of the **Connection string** and supply this as the value.
+CLOUD_STORAGE_CONNECTION_STRING は、新しく作成したストレージアカウントにアクセスして **Settings** => **Access Keys** を選択することで取得できます。 **接続文字列**の内容全体をコピーし、これを値として指定します。
 
 ![Obtain Connection String](../assets/AzureStorageConnectionString.PNG)
 
-Your completed .env file should look similar to the following:
+完成した.envファイルは以下のようになっているはずです。
 ```
 CONTAINER_REGISTRY_NAME=
 LOCAL_STORAGE_ACCOUNT_KEY=9LkgJa1ApIsISmuUHwonxg==
@@ -274,52 +277,52 @@ DESTINATION_STORAGE_NAME=camerataggingmodulecloud
 CLOUD_STORAGE_CONNECTION_STRING=DefaultEndpointsProtocol=https;AccountName=camerataggingmodulestore;AccountKey=00000000000000000000000000000000000000000000000000000000000000000000000000000000000000==;EndpointSuffix=core.windows.net
 ```
 
-We are now ready to create and apply the sample deployment specified in the`deployment-iothub`.
+これで、`deployment-iothub`で指定したサンプルデプロイメントを作成して適用する準備が整いました。
 
 ### Module 2.5 : Generate and Apply the IoT Hub based deployment configuration 
 
-Now that we have accounted for all of the pre-requisite services, setup, and configuration; we are ready to produce a deployment to begin running a sample Intelligent Video Analytics pipeline on our Jetson device.  The following steps will take place in Visual Studio Code, again, preferably running on a development machine which is not the Jetson Device itself.
+これで、前提となるサービス、セットアップ、設定がすべて完了したので、Jetsonデバイス上でサンプルのIntelligent Video Analyticsパイプラインを実行するためのデプロイメントを作成する準備が整いました。 次のステップは、Visual Studio Codeで実行します。
 
-In the previous section, we created a .env file to support the configuration parameters needed by the Blob Storage Module.  That .env file should be located in the `deployment-iothub` folder.  Ensure that you have supplied the appropriate parameters and that the .env file exists before proceeding.
+前のセクションでは、Blob Storage Moduleが必要とする設定パラメータをサポートするために、.envファイルを作成しました。 この.envファイルは `deployment-iothub` フォルダにあるはずです。 先に進む前に、適切なパラメータを提供し、.envファイルが存在することを確認してください。
 
-Next, we will configure the project to target the arm64v8 platform. To accomplish this, bring up the Command Pallette with (CTRL+SHIFT+P), then search for the following task: 
+次に、arm64v8プラットフォームをターゲットとするようにプロジェクトを設定します。これを行うには、(CTRL+SHIFT+P)でコマンドパレットを起動し、以下のタスクを検索します。
 
 ```
 Azure IoT Edge: Set Default Target Platform for Edge Solution
 ```
 
-Select the "Azure IoT Edge: Set Default Target Platform for Edge Solution" task and a drop-down will appear showing all available platforms. Select `arm64v8` from the list.  This will ensure that any modules added to the project and built-from source are targeted to the Jetson architecture.
+「Azure IoT Edge: エッジソリューションのデフォルトターゲットプラットフォームの設定」タスクを選択すると、ドロップダウンが表示され、利用可能なプラットフォームがすべて表示されます。リストから`arm64v8`を選択します。これにより、プロジェクトに追加されたモジュールやソースからビルドされたモジュールが、Jetson アーキテクチャをターゲットにしていることが確認できます。
 
-Note: If you do not see any results when searching for the task above, ensure that you have installed the [Azure IoT Tools Extension](https://marketplace.visualstudio.com/items?itemName=vsciot-vscode.azure-iot-tools).
+注: 上記のタスクを検索しても結果が表示されない場合は、[Azure IoT Tools Extension](https://marketplace.visualstudio.com/items?itemName=vsciot-vscode.azure-iot-tools)がインストールされていることを確認してください。
 
-
-Next, we will need to set a  `DISPLAY` environment variable for the NVIDIADeepStreamSDK module to enable communication to the X11 server running on the host (i.e. allow us to run a GUI based application form a container). In most instances, the `DISPLAY` environment variable will be set to :1, this corresponds to the referenced physical display that may or may not be attached to the host. To obtain the actual value, run the following command on the terminal of the Jetson device:
+次に、ホスト上で実行しているX11サーバーとの通信を可能にするために、NVIDIADeepStreamSDKモジュールの`DISPLAY`環境変数を設定する必要があります（すなわち、コンテナからGUIベースのアプリケーションを実行できるようにします）。ほとんどのインスタンスでは、`DISPLAY`環境変数は:1に設定され、これはホストに接続されているかどうかにかかわらず、参照される物理ディスプレイに対応しています。実際の値を取得するには、Jetsonデバイスのターミナルで以下のコマンドを実行します。
 
 ```
 echo $DISPLAY
 ```
 
-Once you have obtained the `DISPLAY` value, open the `deployment-iothub\deployment.template.json` folder on your development machine and update the value for the [`DISPLAY` variable](https://github.com/toolboc/Intelligent-Video-Analytics-with-NVIDIA-Jetson-and-Microsoft-Azure/blob/master/deployment-iothub/deployment.template.json#L93) to match the result obtained by running the previous command on the Jetson Device.  If this value is mismatched, you may see errors in the NVIDIADeepStreamSDK logs which mention an inability to create an EGL sink.  Make sure to save this file if you make modifications.
+`DISPLAY` 値を取得したら、開発マシンで `deployment-iothub\deployment.template.json` フォルダを開き、Jetson Device で前のコマンドを実行して得られた結果と一致するように [`DISPLAY` 変数](https://github.com/toolboc/Intelligent-Video-Analytics-with-NVIDIA-Jetson-and-Microsoft-Azure/blob/master/deployment-iothub/deployment.template.json#L93)の値を更新します。この値が不一致の場合、NVIDIADeepStreamSDKのログにEGLシンクを作成できないというエラーが表示されることがあります。修正を行う場合は、必ずこのファイルを保存してください。
 
-Next, bring up the Command Pallette again with (CTRL+SHIFT+P), this time search for:
+次に、(CTRL+SHIFT+P)で再度コマンドパレットを起動し、今度は以下のコマンドを検索します。
 
 ```
 Azure IoT Hub: Select IoT Hub
 ```
 
-Select the "Azure IoT Hub: Select IoT Hub" task and follow the prompts to connect to the IoT Hub that was used to register and configure the IoT Edge runtime on your Jetson Device.  This may require that you authenticate your Visual Studio Code instance with Microsoft Azure if you have never done so before.
+Azure IoT Hub」を選択します。IoT Hubを選択」タスクを選択し、プロンプトに従って、Jetsonデバイス上のIoT Edgeランタイムの登録と設定に使用したIoT Hubに接続します。これは、Visual Studio CodeインスタンスをMicrosoft Azureで認証したことがない場合に必要になる場合があります。
 
-After you have selected the appropriate IoT Hub, expand the `deployment-iothub` folder and right-click the `deployment.template.json` file, then select "Generate IoT Edge Deployment Manifest".  This will produce a new folder in that directory named "config" and an associated deployment named `deployment.arm64v8.json`.  Right-click the `deployment.arm64v8.json` file and select "Create Deployment for Single Device".
+適切なIoTハブを選択したら、`deployment-iothub`フォルダを展開して`deployment.template.json`ファイルを右クリックし、「Generate IoT Edge Deployment Manifest」を選択します。これにより、そのディレクトリ内に「config」という名前の新しいフォルダが作成され、 `deployment.arm64v8.json`という名前の関連する配置が生成されます。`deployment.arm64v8.json` ファイルを右クリックして、「単一デバイス用の配置を作成」を選択します。
 
-A drop-down should appear showing all devices registered in your currently selected IoT Hub.  Choose the device that represents your Jetson Device and the deployment will begin to activate on your device (provided the IoT Edge runtime is active and that the device is connected to the internet).
+ドロップダウンが表示され、現在選択しているIoT Hubに登録されているすべてのデバイスが表示されます。Jetsonデバイスを表すデバイスを選択すると、デバイス上で配置がアクティブになります（IoT Edgeランタイムがアクティブで、デバイスがインターネットに接続されている場合）。
 
-It may take a while for the images specified in the deployment to pull down to the device.  You can verify that all images are pulled with:
+デプロイで指定したイメージがデバイスにプルダウンされるまでに時間がかかる場合があります。すべてのイメージがプルダウンされているかどうかは、以下の方法で確認できます。
+
 
 ```
 sudo docker images
 ```
 
-A completed deployment should eventually show a result similar to the following output:
+完了したデプロイメントでは、最終的に以下のような結果が表示されるはずです。
 
 ```
 REPOSITORY                                              TAG                   IMAGE ID            CREATED             SIZE
@@ -331,15 +334,15 @@ mcr.microsoft.com/azure-stream-analytics/azureiotedge   1.0.6-linux-arm32v7   bb
 mcr.microsoft.com/azure-blob-storage                    latest                76f2e7849a91        11 months ago       203MB
 ```
 
-When you are certain that the deployment has completed, it is now possible to modify the solution to your needs.  This will be explained in the next section.
+デプロイが完了したことを確認したら、次はニーズに合わせてソリューションを修正することができます。これについては次のセクションで説明します。
 
 ### Module 2.6 : Customizing the Sample Deployment 
 
-This section is a bit open-ended as it will depend on how you intend to process video input on your Jetson Device.  
+このセクションは、Jetson Device上でどのようにビデオ入力を処理するかに依存しますので、少し自由度の高いものになっています。
 
-Before making any modifications, it is highly advised to consult the [DeepStream Documentation for Configuration Groups](http://aka.ms/DeepStreamDevGuide) and remember that everything should be tracked using 'git' so recovery is always possible.  
+変更を行う前に、[DeepStream Documentation for Configuration Groups](http://aka.ms/DeepStreamDevGuide)のドキュメントを参照することを強くお勧めします。
 
-The un-modified sample deployment references a DeepStream configuration located on your Jetson Device at `/data/misc/storage/Intelligent-Video-Analytics-with-NVIDIA-Jetson-and-Microsoft-Azure/services/DEEPSTREAM/configs`.  Within this directory there will be some additional example DeepStream Configurations:
+変更されていないサンプルデプロイメントは、`/data/misc/storage/Intelligent-Video-Analytics-with-NVIDIA-Jetson-and-Microsoft-Azure/services/DEEPSTREAM/configs`にあるDeepStream設定を参照しています。このディレクトリ内には、DeepStreamの設定例がいくつかあります。
 
 | DeepStream Sample Configuration Name | Description                                                                                                                                                                                                |
 |--------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -347,22 +350,22 @@ The un-modified sample deployment references a DeepStream configuration located 
 | DSConfig-YoloV3.txt                  | Employs an example object detection model based on [YoloV3](https://pjreddie.com/darknet/yolo/)                                                                                                            |
 | DSConfig-YoloV3Tiny.txt              | Employs an example object detection model based on [YoloV3Tiny](https://pjreddie.com/darknet/yolo)   
 
-Each of these examples are configured by default to process a single video input from a [publicly available RTSP stream of Big Buck Bunny](https://www.wowza.com/html/mobile.html).  We do this partially because it is the ONLY reliable and publicly accessible RTSP stream on the entire internet and to make it super easy to modify the existing example to point to a custom RTSP endpoint for say, an IP capable security camera.  
+これらの各例は、デフォルトでは、[Big Buck Bunnyの公開されているRTSPストリーム](https://www.wowza.com/html/mobile.html)からの単一のビデオ入力を処理するように設定されています。これは、インターネット上で唯一信頼性が高く、公開されているRTSPストリームであることと、既存の例を変更して、例えばIP対応のセキュリティカメラなどのカスタムRTSPエンドポイントを指すようにするのが非常に簡単になるようにするために部分的に設定しています。
 
-To change the active DeepStream configuration in your deployment, you can modify the `deployment.template.json` to specify a different configuration file within the `ENTRYPOINT` specification for the `NVIDIADeepStreamSDK` module, then repeat the steps in Module 2.5 to regenerate and apply the modified deployment. Note that using the YoloV3* configurations will require that you bring in some additional dependencies which will be discussed in Module 3.  
+配置でアクティブなDeepStream設定を変更するには、`depository.template.json`を修正して、`NVIDIADeepStreamSDK`モジュールの`ENTRYPOINT`仕様内で別の設定ファイルを指定し、モジュール2.5の手順を繰り返して、修正した配置を再生成して適用します。YoloV3*構成を使用する場合、モジュール3で説明する追加の依存関係を導入する必要があることに注意してください。
 
-In the default deployment that we applied, the DeepStream confiuration, DSConfig-CustomVisionAI.txt can be modified on your Jetson device with:
+今回適用したデフォルトの配置では、DeepStreamのコンフィグレーションであるDSConfig-CustomVisionAI.txtをJetsonデバイス上で以下のように変更することができます。
 
 ```
 nano /data/misc/storage/Intelligent-Video-Analytics-with-NVIDIA-Jetson-and-Microsoft-Azure/services/DEEPSTREAM/configs/DSConfig-CustomVisionAI.txt
 ```
 
-After you have made edits to this configuration, restart the NVIDIADeepStreamSDK module to test it with:
+この設定を編集した後、NVIDIADeepStreamSDKモジュールを再起動してテストしてください。
 ```
 docker restart NVIDIADeepStreamSDK
 ```
 
-To monitor the logs, you can use:
+ログを監視するには
 ```
 iotedge logs NVIDIADeepStreamSDK
 ```
@@ -373,13 +376,13 @@ OR
 docker logs -f NVIDIADeepStreamSDK
 ```
 
-For each of your input sources, you will want to ensure that each of them is provided an entry in msgconv_config.txt by modifying with:
+入力ソースのそれぞれについて、msgconv_config.txt のエントリを指定するには、以下のように変更します。
 ```
 nano /data/misc/storage/Intelligent-Video-Analytics-with-NVIDIA-Jetson-and-Microsoft-Azure/services/DEEPSTREAM/configs/msgconv_config.txt
 ```
 
-This file is used to generate telemetry to the Azure IoT Hub and to specify which video input / camera that a given object detection originated from.
+このファイルは、Azure IoT Hubへのテレメトリを生成するために使用され、特定のオブジェクト検出がどのビデオ入力/カメラから発信されたかを指定します。
 
-One last note, if you are modifying the DeepStream configuration to use multiple video sources,you will want to modify the `[streammux]` `batch-size` property to equal the number of video sources you are using for optimal performance.  For example, if you have modified the DeepStream Configuration to use four input RTSP streams, you will want to set `[streammux]` `batch-size` = 4, in your modified DeepStream configuration.
+最後の注意点として、複数のビデオソースを使用するようにDeepStream構成を変更している場合、最適なパフォーマンスを得るために使用するビデオソースの数と等しくなるように、`[streammux]` `batch-size`プロパティを変更する必要があります。 たとえば、4つの入力RTSPストリームを使用するようにDeepStream構成を変更した場合、変更したDeepStream構成で`[streammux]` `batch-size` = 4を設定します。
 
-Once you have modified the configuration to obtain video sources from your desired inputs, we will now be ready to look into how to create and deploy Custom Object Detection Model from CustomVision.AI and explore the usage of academic grade models using the YOLOV3* configurations. 
+希望する入力からビデオソースを取得するように設定を変更したら、次はCustomVision.AIからカスタムオブジェクト検出モデルを作成して展開する方法と、YOLOV3*設定を使用してアカデミックグレードモデルの使用法を探る準備ができました。

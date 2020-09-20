@@ -1,16 +1,16 @@
 ## Module 4 : Filtering Telemetry with Azure Stream Analytics at the Edge and Modeling with Azure Time Series Insights
 
-At this point, you should have a working DeepStream Configuration referenced by the NVIDIADeepStreamSDK module, [customized to accommodate your video input source(s)](https://github.com/toolboc/Intelligent-Video-Analytics-with-NVIDIA-Jetson-and-Microsoft-Azure/blob/master/docs/Module%202%20-%20Configure%20and%20Deploy%20Intelligent%20Video%20Analytics%20to%20IoT%20Edge%20Runtime%20on%20NVIDIA%20Jetson.md#module-26--customizing-the-sample-deployment), and [configured to use a custom object detection model](./Module%203%20-%20Develop%20and%20deploy%20Custom%20Object%20Detection%20Models%20with%20IoT%20Edge%20DeepSteam%20SDK%20Module.md).
+この時点で、NVIDIADeepStreamSDKモジュールによって参照されるDeepStream構成が動作し、[ビデオ入力ソースに合わせてカスタマイズ](https://github.com/toolboc/Intelligent-Video-Analytics-with-NVIDIA-Jetson-and-Microsoft-Azure/blob/master/docs/Module%202%20-%20Configure%20and%20Deploy%20Intelligent%20Video%20Analytics%20to%20IoT%20Edge%20Runtime%20on%20NVIDIA%20Jetson.md#module-26--customizing-the-sample-deployment)され、[カスタムのオブジェクト検出モデルを使用するように構成されている](./Module%203%20-%20Develop%20and%20deploy%20Custom%20Object%20Detection%20Models%20with%20IoT%20Edge%20DeepSteam%20SDK%20Module.md)必要があります。
 
-In this module we will explain how to flatten, aggregate, and summarize DeepStream object detection results using [Azure Stream Analytics on Edge](https://docs.microsoft.com/en-us/azure/stream-analytics/stream-analytics-edge?WT.mc_id=julyot-iva-pdecarlo) and forward that telemetry to our [Azure IoT Hub](https://docs.microsoft.com/en-us/azure/iot-hub/?WT.mc_id=julyot-iva-pdecarlo). We will then introduce a new Azure Service known as [Time Series Insights](https://docs.microsoft.com/en-us/azure/time-series-insights/?WT.mc_id=julyot-iva-pdecarlo). This service will take in input via an event-source from our IoT Hub to allow us to analyze, query, and detect anomalies within the object detection data produced by our IoT Edge device. 
+このモジュールでは、[Azure Stream Analytics on Edge](https://docs.microsoft.com/en-us/azure/stream-analytics/stream-analytics-edge?WT.mc_id=julyot-iva-pdecarlo)を使用してDeepStreamオブジェクト検出結果を平坦化、集計、要約し、そのテレメトリを[Azure IoT Hub](https://docs.microsoft.com/en-us/azure/iot-hub/?WT.mc_id=julyot-iva-pdecarlo)に転送する方法を説明します。次に、[Time Series Insights](https://docs.microsoft.com/en-us/azure/time-series-insights/?WT.mc_id=julyot-iva-pdecarlo)として知られる新しいAzureサービスを導入します。このサービスは、IoT Hubからイベントソースを介して入力を取り込み、IoT Edgeデバイスが生成するオブジェクト検出データ内の異常を分析、クエリ、検出できるようにします。
 
-If you wish to follow along with the steps in this module, we have recorded a livestream presentation titled "[Consuming and Modeling Object Detection Data with Azure Time Series Insights](https://www.youtube.com/watch?v=l5tjaD-qYwY)" that walks through the steps below in great detail.
+このモジュールのステップに従いたい場合は、「[Consuming and Modeling Object Detection Data with Azure Time Series Insights](https://www.youtube.com/watch?v=l5tjaD-qYwY)」と題して、以下のステップを詳細に説明するライブストリーム・プレゼンテーションを録画しました。
 
 [![Consuming and Modeling Object Detection Data with Azure Time Series Insights](../assets/LiveStream4.PNG)](https://www.youtube.com/watch?v=l5tjaD-qYwY)
 
 ## Module 4.1 : Recreating the Azure Stream Analytics job in Microsoft Azure
 
-ここまでのところ、[配置テンプレートは、外国の Azure サブスクリプションに存在する Azure Stream Analytics ジョブを参照しています](https://github.com/toolboc/Intelligent-Video-Analytics-with-NVIDIA-Jetson-and-Microsoft-Azure/blob/master/deployment-iothub/deployment.template.json#L240)。 この手順では、独自の Azure サブスクリプションの下でそのジョブを再作成し、そのジョブがソリューションに提供する機能の詳細な説明を行います。 これにより、提供されているStream Analytics Queryを好みに合わせてカスタマイズし始めるのに十分な知識が得られるはずです。 次に、新しく作成したAzure Stream Analyticsジョブを参照するために、現在の設定を更新する方法を実演します。
+ここまでのところ、[デプロイテンプレートは、外国の Azure サブスクリプションに存在する Azure Stream Analytics ジョブを参照しています](https://github.com/toolboc/Intelligent-Video-Analytics-with-NVIDIA-Jetson-and-Microsoft-Azure/blob/master/deployment-iothub/deployment.template.json#L240)。 この手順では、独自の Azure サブスクリプションの下でそのジョブを再作成し、そのジョブがソリューションに提供する機能の詳細な説明を行います。 これにより、提供されているStream Analytics Queryを好みに合わせてカスタマイズし始めるのに十分な知識が得られるはずです。 次に、新しく作成したAzure Stream Analyticsジョブを参照するために、現在の設定を更新する方法を実演します。
 
 Azureマーケットプレイスに移動し、「Azure Stream Analytics on IoT Edge」を検索します。
 
@@ -32,33 +32,34 @@ Stream Analyticsジョブに名前を付け、元のIoT Hubと同じ地域に配
 
 次に、[deployment template route configuration](https://github.com/toolboc/Intelligent-Video-Analytics-with-NVIDIA-Jetson-and-Microsoft-Azure/blob/master/deployment-iothub/deployment.template.json#L211)で使用する出力エイリアスを設定する"出力"に移動します。 この設定は、DeepStreamAnalytics Streaming Analyticsのジョブ出力がIoTハブに流れるように構成するために重要です。 このステップでは名前の付け方が非常に重要で、ルート構成で使用するエイリアスと一致している必要があります。 
 
-Select, "Add" then "Edge Hub" as shown below:
+下図のように「追加」→「Edge Hub」を選択します。
 ![Azure SAS on Edge Output](../assets/AzureSASonEdgeOutput.PNG)
 
-In the resulting window, name the `Output Alias` "AggregatedDetections" and select "Save".
-
+結果のウィンドウで、`出力エイリアス`に「AggregatedDetections」という名前を付け、「保存」を選択します。
 ![Azure SAS on Edge Output Aggregated](../assets/AzureSASonEdgeOutputAggregated.PNG)
 
-Select, "Add" then "Edge Hub" again, as shown below:
+下図のように、「追加」を選択し、再度「Edge Hub」を選択します。
 ![Azure SAS on Edge Output](../assets/AzureSASonEdgeOutput.PNG)
 
-In the resulting window, name the `Output Alias` "SummarizedDetections" and select "Save".
+結果のウィンドウで、`出力エイリアス`に「SummarizedDetections」という名前を付け、「保存」を選択します。
 
 ![Azure SAS on Edge Output Summarized](../assets/AzureSASonEdgeOutputSummarized.PNG)
 
-You should now have two outputs defined, one for "AggregatedDetections" and another for "SummarizedDetections".
+これで、「AggregatedDetections」用と「SummarizedDetections」用の2つの出力が定義されているはずです。
 
 ![Azure SAS on Edge Outputs](../assets/AzureSASonEdgeOutputs.PNG)
 
-Navigate back to the newly created job and select "Query", then edit the Query to contain the contents of [DeepStreamAnalytics.sql](../services/AZURE_STREAMING_ANALYTICS/Edge/DeepStreamAnalytics.sql) and save the Query:
+新しく作成したジョブに戻り、「クエリ」を選択し、[DeepStreamAnalytics.sql](../services/AZURE_STREAMING_ANALYTICS/Edge/DeepStreamAnalytics.sql)の内容を含むようにクエリを編集し、クエリを保存します。
+
 
 ![Azure SAS on Edge Query](../assets/AzureSASonEdgeQuery.PNG)
 
-Next, select "Upload sample input" then upload the contents of [SampleInput.json](../services/AZURE_STREAMING_ANALYTICS/Edge/SampleInput.json).
+次に、「サンプル入力のアップロード」を選択し、[SampleInput.json](../services/AZURE_STREAMING_ANALYTICS/Edge/SampleInput.json)の内容をアップロードします。
+
 
 ![Azure SAS on Edge Query Test](../assets/AzureSASonEdgeQueryTest.PNG)
 
-Select "OK", then "Test query" to produce the following result (You may also repeat the last step using [DemoData.json](../services/AZURE_STREAMING_ANALYTICS/Edge/DemoData.json) which contains sample data from an actual test run):
+OKを選択し、「Test query」を選択すると、以下のような結果が得られます（実際のテスト実行のサンプルデータを含む[DemoData.json](../services/AZURE_STREAMING_ANALYTICS/Edge/DemoData.json)を使用して、最後のステップを繰り返すこともできます）。
 
 ![Azure SAS on Edge Query Tested](../assets/AzureSASonEdgeQueryTested.PNG)
 
@@ -69,6 +70,12 @@ Azure Stream Analytics offers a SQL query language for performing transformation
 The DeepStreamAnalytics query works by first flattening the DeepStream message output by taking advantage of the [`REGEXMATCH`](https://docs.microsoft.com/en-us/stream-analytics-query/regexmatch-azure-stream-analytics?WT.mc_id=julyot-iva-pdecarlo) function.
 
 Given the following example output from DeepStream where `objects` is formatted as [ *trackingId | bboxleft | bboxtop | bboxwidth | bboxheight | object* ]:
+
+Azure Stream Analytics は、イベントのストリームに対して変換や計算を実行するための SQL クエリ言語を提供しています。[Stream Analytics Query Language Reference](https://docs.microsoft.com/en-us/stream-analytics-query/stream-analytics-query-language-reference?WT.mc_id=julyot-iva-pdecarlo)には、利用可能な構文の詳細情報が記載されています。
+
+DeepStreamAnalyticsクエリは、[`REGEXMATCH`](https://docs.microsoft.com/en-us/stream-analytics-query/regexmatch-azure-stream-analytics?WT.mc_id=julyot-iva-pdecarlo)関数を利用してDeepStreamメッセージ出力を最初に平坦化することで動作します。
+
+以下の例では、DeepStreamからの出力は、`オブジェクト`が [ trackingId | bboxleft | bboxtop | bboxwidth | bboxheight | object* ] としてフォーマットされています。
 
 ```
      {
@@ -84,7 +91,8 @@ Given the following example output from DeepStream where `objects` is formatted 
     }
 ```
 
-The first query will transform this output into the following format, which is referenced as `FlattenedDetections`:
+最初のクエリでは、この出力が以下の形式に変換され、`FlattenedDetections`として参照されます。
+
 
 | sensorId | object | @timestamp               | matches |
 |----------|--------|--------------------------|---------|
@@ -92,160 +100,175 @@ The first query will transform this output into the following format, which is r
 | Yard     | Car    | 2020-04-29T10:15:22.439Z | 1       |
 | Yard     | Person | 2020-04-29T10:15:22.439Z | 1       |
 
-The next step filters out any duplicates using the `matches` value , i.e. rows where (timestamp and objects) were equal in the original data, then aggregates the results to produce a count of how many objects were present in each DeepStream message over a 15 second interval.  This table is aliased as `AggregatedDetections`.
+
+次のステップでは、`matches`値を使用して重複しているものをフィルタリングします。このテーブルは `AggregatedDetections` としてエイリアスされています。
+
+
 
 |count  | sensorId | object | @timestamp               |
 |-------|----------|--------|--------------------------|
 | 2     | Yard     | Car    | 2020-04-29T10:15:22.439Z |
 | 1     | Yard     | Person | 2020-04-29T10:15:22.439Z |
 
-Finally, a smoothing function floors the average of `count` over the same 15 second interval into a table aliased as `SummarizedDetections`.  Our example message produces the same result as the previous query, but it should be clear that if a decimal is encountered in the average that it would be rounded down to the nearest whole number.
 
-Using this information, you should be able to modify the query to produce results over a longer or shorter time window and/or report the `true` average instead of rounding down in the smoothing function. 
+最後に，平滑化関数は，同じ15秒間隔の`カウント`の平均を，`SummarizedDetections` として別名を持つテーブルにフロアリングします．この例のメッセージでは、前のクエリと同じ結果が得られますが、もし平均値に小数が含まれていた場合は、小数点以下の整数に切り捨てられることは明らかです。
+
+この情報を使用して、より長い時間ウィンドウまたはより短い時間ウィンドウで結果を生成したり、平滑化関数で切り捨てるのではなく`真`の平均を報告したりするようにクエリを変更することができるはずです。
 
 ## Module 4.3 : Publishing the DeepStream Analytics Job 
 
-Azure Stream Analytics on Edge uses Azure Storage to host the DeepStream Analytics job by packing the query into a publicly accessible zip file.  This is why we are able to reference a job that exists in another subscription.  For example, [the job specified in the default deployment template](https://github.com/toolboc/Intelligent-Video-Analytics-with-NVIDIA-Jetson-and-Microsoft-Azure/blob/master/deployment-iothub/deployment.template.json#L240).
+Azure Stream Analytics on Edgeでは、Azure Storageを使用して、クエリをパブリックアクセス可能なZIPファイルにパッキングしてDeepStream Analyticsのジョブをホストしています。そのため、別のサブスクリプションに存在するジョブを参照することができます。たとえば、[デフォルトの配置テンプレートで指定されたジョブなど](https://github.com/toolboc/Intelligent-Video-Analytics-with-NVIDIA-Jetson-and-Microsoft-Azure/blob/master/deployment-iothub/deployment.template.json#L240)。
 
-To publish the new job into our own subscription, we will navigate back to the newly created Azure Stream Analytics on Edge job and select "Storage Account Settings" => "Add Storage Account".  Here you can select the existing [storage account that we setup for the CameraTaggingModule](https://github.com/toolboc/Intelligent-Video-Analytics-with-NVIDIA-Jetson-and-Microsoft-Azure/blob/master/docs/Module%202%20-%20Configure%20and%20Deploy%20Intelligent%20Video%20Analytics%20to%20IoT%20Edge%20Runtime%20on%20NVIDIA%20Jetson.md#module-24--configure-the-blob-storage-module-dependencies) and then create a new container to host the job, OR, you could create a whole new storage account by repeating [the relevant instructions in Module 2.4](https://github.com/toolboc/Intelligent-Video-Analytics-with-NVIDIA-Jetson-and-Microsoft-Azure/blob/master/docs/Module%202%20-%20Configure%20and%20Deploy%20Intelligent%20Video%20Analytics%20to%20IoT%20Edge%20Runtime%20on%20NVIDIA%20Jetson.md#module-24--configure-the-blob-storage-module-dependencies) and configure it appropriately.  
+新しいジョブを独自のサブスクリプションに公開するには、新しく作成したAzure Stream Analytics on Edgeジョブに戻り、「ストレージアカウントの設定」⇒「ストレージアカウントの追加」を選択します。ここで、[CameraTaggingModule用に設定した既存のストレージアカウント](https://github.com/toolboc/Intelligent-Video-Analytics-with-NVIDIA-Jetson-and-Microsoft-Azure/blob/master/docs/Module%202%20-%20Configure%20and%20Deploy%20Intelligent%20Video%20Analytics%20to%20IoT%20Edge%20Runtime%20on%20NVIDIA%20Jetson.md#module-24--configure-the-blob-storage-module-dependencies)を選択して、ジョブをホストするための新しいコンテナを作成するか、[モジュール2.4の関連手順](https://github.com/toolboc/Intelligent-Video-Analytics-with-NVIDIA-Jetson-and-Microsoft-Azure/blob/master/docs/Module%202%20-%20Configure%20and%20Deploy%20Intelligent%20Video%20Analytics%20to%20IoT%20Edge%20Runtime%20on%20NVIDIA%20Jetson.md#module-24--configure-the-blob-storage-module-dependencies)を繰り返して、まったく新しいストレージアカウントを作成して、適切に設定することができます。
 
-It is up to you whether you wish to use a single storage account for both the CameraTaggingModule and Azure Stream Analytics on Edge job OR whether you want to use separate storage accounts to service them respectively.  
+CameraTaggingModuleとAzure Stream Analytics on Edgeジョブの両方に単一のストレージアカウントを使用するか、別々のストレージアカウントを使用してそれぞれにサービスを提供するかは、あなた次第です。
 
-Once you have configured the storage account appropriately, select "Save".
+ストレージアカウントを適切に設定したら、「保存」を選択します。
 
 ![Azure SAS Storage Account](../assets/AzureSASstorage.PNG)
 
- Next, we will navigate back to the newly created Azure Stream Analytics on Edge job and select "Publish" => "Publish".  A prompt will appear, select "Yes" to proceed.  This will generate a SAS URL as shown below.  In the next step, we will reference this SAS URL in our deployment template to update the currently deployed job to the new one.
+次に、新しく作成したAzure Stream Analytics on Edgeジョブに戻り、「発行」⇒「発行」を選択します。プロンプトが表示されるので、「はい」を選択して次に進みます。これで、以下のようにSASのURLが生成されます。次のステップでは、配置テンプレートでこのSAS URLを参照して、現在配置されているジョブを新しいジョブに更新します。
 
  ![Azure SAS Publish](../assets/AzureSASpublish.PNG)
 
 ## Module 4.4 : Deploying the DeepStream Analytics Job 
 
- On your development machine, open Visual Studio Code and open the folder of the repository that we cloned to the dev machine during Module 2.  We need to re-configure our deployment to reference the newly published DeepStream Analytics job.  Up to this point, the deployment template has referenced an DeepStream Analytics that lives in a foreign Azure subscription.  
+開発マシンでVisual Studio Codeを開き、モジュール2の間に開発マシンにクローンしたリポジトリのフォルダを開きます。新しく公開されたDeepStream Analyticsジョブを参照するように配置を再構成する必要があります。ここまでのところ、配置テンプレートは、外国のAzureサブスクリプションにあるDeepStream Analyticsを参照しています。
 
-To begin, open `deployment-iothub/deployment.template.json` and delete the following highlighted section:
+開始するには、`deployment-iothub/deployment.template.json`を開き、次のハイライトされたセクションを削除します。
 
  ![Azure SAS Prep](../assets/AzureSASprep.PNG)
 
-This will delete the DeepStreamAnalytics module entry from our deployment template and allow us the ability to re-create it.  
+これにより、配置テンプレートからDeepStreamAnalyticsモジュールのエントリが削除され、再作成できるようになります。
 
-Next, bring up the command pallette with (CTRL+SHIFT+P) and type in "Azure IoT Edge: Add IoT Edge Module" to launch that task.  When prompted to "Select Deployment Template File", select the `deployment-iothub/deployment.template.json` option:
+次に、(CTRL+SHIFT+P)でコマンドパレットを起動し、「Azure IoT Edge: IoT Edgeモジュールの追加」と入力してタスクを起動します。配置テンプレートファイルを選択してください」というプロンプトが表示されたら、`deployment-iothub/deployment.template.json`オプションを選択します。
 
 ![Azure SAS Select template](../assets/AzureSASselectTemplate.PNG)
 
-Next, select the "Azure Stream Analytics" module template:
+次に、「Azure Stream Analytics」モジュールのテンプレートを選択します。
 
 ![Azure SAS Select module](../assets/AzureSASselectModule.PNG)
 
-Next, name the module "DeepStreamAnalytics", this name is very important and will be referenced later, ensure that it is named exactly as shown:
+次に、モジュールに "DeepStreamAnalytics "という名前を付けます。この名前は非常に重要で、後で参照されます。
 
 ![Azure SAS Name module](../assets/AzureSASnameModule.PNG)
 
-Next, you will need to select your newly published Azure Stream Analytics job:
+次に、新しく公開されたAzure Stream Analyticsのジョブを選択する必要があります。
 
 ![Azure SAS Select Job](../assets/AzureSASselectJob.PNG)
 
-Once these options are completed, the deployment.template.json will re-apply the DeepStreamAnalytics module to pull the SAS job from your newly deployed Azure Stream Analytics on Edge job.  We still new to make a few additional changes that the tooling does not account for.  
+これらのオプションが完了すると、deployment.template.jsonは、新しくデプロイしたAzure Stream Analytics on EdgeジョブからSASジョブを引き出すために、DeepStreamAnalyticsモジュールを再適用します。ツールが考慮していないいくつかの追加変更を行う必要があります。
 
-First, we need to update to pull an ARM compatible image that is capable of running on the Jetson device.  Modify the image entry for the DeepStreamAnalytics module to reference the following image and tag `mcr.microsoft.com/azure-stream-analytics/azureiotedge:1.0.6-linux-arm32v7` as shown:
+まず、Jetsonデバイス上で実行可能なARM互換イメージをプルするように更新する必要があります。次のイメージを参照するようにDeepStreamAnalyticsモジュールのイメージエントリを変更し、`mcr.microsoft.com/azure-stream-analytics/azureiotedge:1.0.6-linux-arm32v7`というタグを付けて、示されているように変更します。
 
 ![Azure SAS update Image](../assets/AzureSASupdateImage.PNG)
 
-Next, we need to update the route to only send "SummarizedDetections". By default the tooling will configure all output to flow to IoTHub ("AggregatedDetections" and "SummarizedDetections"), modify the route entry for `DeepStreamAnalyticsToIoTHub` to `"FROM /messages/modules/DeepStreamAnalytics/outputs/SummarizedDetections INTO $upstream",` as shown:
+次に、"SummarizedDetections "のみを送信するようにルートを更新する必要があります。
+
+デフォルトでは、ツールはすべての出力を IoTHub に流すように設定します（"AggregatedDetections" と "SummarizedDetections"）。
+`DeepStreamAnalyticsToIoTHub`のルートエントリを `"FROM /messages/modules/DeepStreamAnalytics/outputs/SummarizedDetections INTO $upstream",` に変更します。
+
 
 ![Azure SAS update Route](../assets/AzureSASupdateRoute.PNG)
 
 You can validate the changes are correct by looking at the diff of changes to `deployment-iothub/deployment.template.json`, there will be number of entries added to `DeepStream Analytics: { "properties.desired": {` and it should be the only section in that file that shows any modifications.
 
+変更が正しいかどうかは、`deployment-iothub/deployment.template.json`の変更のdiffを見ることで確認できます。`DeepStream Analytics: { "properties.desired": {`  に追加されるエントリの数が増え、そのファイルの中で唯一変更が表示されるセクションになるはずです。
+
+
 ![Azure SAS Git Diff](../assets/AzureSASgitDiff.PNG)
 
-Let's quickly overview what the entries are and how they are used by the Stream Analytics on Edge Job:
+エントリが何であるか、そしてStream Analytics on Edgeジョブでどのように使用されているかを簡単に概観してみましょう。
 
-* **ASAJobInfo** [required] is a SASURL pointing to a zip package in blob storage, this zip package contains the compiled ASA job including the dlls, job configuration, definition, and customer code (if you have it defined). The ASA module will download this package and start the job from it. This is the only property the module actually needs to start a streaming job.
-* **ASAJobResourceId** [optional] is the resource id of the ASA job you choose to deploy. This property is used by the module to call back to ASA service to check whether there is a job update or not after the initial deployment.
-* **ASAJobEtag** [optional] is the hash id of the currently deployed job. This is used also by the module to check whether there is a job update or not after the initial deployment.
-* **PublishTimestamp** [optional] is the job publish time, which is just to show when the streaming job was compiled and published to blob storage. 
+* **ASAJobInfo** [required]は、ブロブストレージ内のzipパッケージを指すSASURLです。このzipパッケージには、DLL、ジョブ設定、定義、顧客コード（定義されている場合）を含むコンパイルされたASAジョブが含まれています。ASA モジュールはこのパッケージをダウンロードし、そこからジョブを開始します。これは、モジュールがストリーミングジョブを開始するために必要な唯一のプロパティです。
+* **ASAJobResourceId** [optional] は、デプロイする ASA ジョブのリソース ID です。このプロパティは、最初のデプロイ後にジョブの更新があるかどうかを確認するために ASA サービスにコールバックするためにモジュールが使用します。
+* **ASAJobEtag** [オプション] は、現在デプロイされているジョブのハッシュ ID です。これはモジュールが最初のデプロイ後にジョブの更新があるかどうかをチェックするためにも使用されます。
+PublishTimestamp [optional]はジョブの公開時間です。これはストリーミングジョブがコンパイルされ、ブロブストレージに公開された時間を示すだけです。
+これらのエントリを使用して、公開したStream AnalyticsジョブとEdge上で実行しているDeepStreamAnalyticsモジュールとの間で変更を同期することができるようになりました。
 
-With these entries, it is now possible to sync changes between your published Stream Analytics Job and the DeepStreamAnalytics module running on the Edge.
+変更を行い、現在更新されている`deployment-iothub/deployment.template.json`を保存したら、`deployment-iothub`フォルダを展開し、`deployment.template.json`ファイルを右クリックして、「Generate IoT Edge Deployment Manifest（IoT Edge デプロイメント マニフェストの生成）」を選択します。これにより、そのディレクトリ内に「config」という名前の新しいフォルダが作成され、 `deployment.arm64v8.json`という名前の関連する配置が作成されます。`deployment.arm64v8.json` ファイルを右クリックして、「単一デバイス用の配置を作成」を選択します。
 
-After you have made the modifications and saved the now-updated `deployment-iothub/deployment.template.json`, expand the `deployment-iothub` folder and right-click the `deployment.template.json` file, then select "Generate IoT Edge Deployment Manifest".  This will produce a new folder in that directory named "config" and an associated deployment named `deployment.arm64v8.json`.  Right-click the `deployment.arm64v8.json` file and select "Create Deployment for Single Device".
-
-A drop-down should appear showing all devices registered in your currently selected IoT Hub. Choose the device that represents your Jetson Device and the deployment will begin to activate on your device (provided the IoT Edge runtime is active and that the device is connected to the internet).
+ドロップダウンが表示され、現在選択しているIoT Hubに登録されているすべてのデバイスが表示されます。Jetsonデバイスを表すデバイスを選択すると、ディプロイメントがデバイス上でアクティブになります（IoT Edgeランタイムがアクティブで、デバイスがインターネットに接続されている場合）。
 
 ## Module 4.5 : Configure and deploy Azure Time Series Insights with an IoT Hub event source 
 
-[Azure Time Series Insights](https://docs.microsoft.com/en-us/azure/time-series-insights/?WT.mc_id=julyot-iva-pdecarlo) allows us to contextually visualize data coming in from our IoT devices to identify and produce actionable insights.  It supports "cold" archival analysis and near real-tim "warm" query features. It is also possible to integrate Time Series Insights with advanced analytics services, such as [Azure Machine Learning](https://docs.microsoft.com/en-us/azure/machine-learning/?WT.mc_id=julyot-iva-pdecarlo), [Azure Databricks](https://docs.microsoft.com/en-us/azure/azure-databricks/?WT.mc_id=julyot-iva-pdecarlo), [Apache Spark](https://docs.microsoft.com/en-us/azure/hdinsight/spark/apache-spark-overview?WT.mc_id=julyot-iva-pdecarlo), and others. 
 
-In this section, we will configure and deploy a Time Series Insights instance in order to visualize and operate on object detection data produced by our Jetson device(s).  We will demonstrate creating a "Pay-As-You-Go" deployment to minimize costs, additional details on available pricing options for Time Series Insights can be found [here](https://azure.microsoft.com/en-us/pricing/details/time-series-insights/?WT.mc_id=julyot-iva-pdecarlo).
+[Azure Time Series Insights](https://docs.microsoft.com/en-us/azure/time-series-insights/?WT.mc_id=julyot-iva-pdecarlo)では、IoTデバイスから入ってくるデータを文脈的に可視化し、実用的なインサイトを特定して生成することができます。これは、「コールド」アーカイブ分析と、ほぼリアルタイムの「ウォーム」クエリ機能をサポートしています。また、時系列インサイトを[Azure Machine Learning](https://docs.microsoft.com/en-us/azure/machine-learning/?WT.mc_id=julyot-iva-pdecarlo), [Azure Databricks](https://docs.microsoft.com/en-us/azure/azure-databricks/?WT.mc_id=julyot-iva-pdecarlo), [Apache Spark](https://docs.microsoft.com/en-us/azure/hdinsight/spark/apache-spark-overview?WT.mc_id=julyot-iva-pdecarlo)などの高度なアナリティクスサービスと統合することも可能です。
 
-To get started, navigate to the Azure Marketplace and search for 'Time Series Insights' 
+このセクションでは、Jetsonデバイスによって生成されたオブジェクト検出データを可視化して操作するために、時系列インサイトのインスタンスを設定してデプロイします。コストを最小限に抑えるために、"Pay-As-You-Go "のデプロイメントをデモします。時系列インサイトの利用可能な価格オプションの詳細については、[こちら](https://azure.microsoft.com/en-us/pricing/details/time-series-insights/?WT.mc_id=julyot-iva-pdecarlo)をご覧ください。
+
+開始するには、Azure Marketplaceに移動し、'Time Series Insights'を検索してください。
 
 ![Azure TSI Marketplace](../assets/TSIMarketplace.PNG)
 
-Select "Create":
+"作成"を選択
 
 ![Azure TSI Create](../assets/TSICreate.PNG)
 
-In the "Review + Create" section, ensure that you are deploying into the same reason that contains your IoT Hub.  Ensure that "PAYG" tier is selected.  This will create a drop-down underneath for configuring the "Time Series Id".  Selecting an appropriate Time Series ID is critical. Choosing a Time Series ID is like choosing a partition key for a database. It is required when you create a Time Series Insights Preview environment and it cannot be re-configured once set.  We will configure this section to use the `sensorId` and `iothub-connection-device-id`, allowing us to partition our data in an organized fashion.  This is possible because our Stream Analytics job produces a `sensorId` value in it's output.  The `iothub-connection-device-id` is supplied by the IoT Edge runtime and corresponds to the device which produced the message to IoT Hub.  Ensure that you have configured the options similar to the image below:
+Review + Create セクションで、IoT Hubを含む同じ理由にデプロイしていることを確認します。PAYG」層が選択されていることを確認します。これにより、「Time Series Id」を設定するためのドロップダウンが下に作成されます。適切なタイムシリーズIDを選択することは非常に重要です。時系列IDを選択することは、データベースのパーティションキーを選択するようなものです。時系列IDは、Time Series Insights Preview環境を作成する際に必要であり、一度設定すると再設定できません。このセクションでは、`sensorId` と `iothub-connection-device-id` を使用するように設定し、データを整理された方法でパーティショニングできるようにします。これは、Stream Analyticsジョブが出力で`sensorId`値を生成するためです。`iothub-connection-device-id`は、IoT Edgeランタイムによって提供され、IoT Hubへのメッセージを生成したデバイスに対応します。以下の画像のようなオプションが設定されていることを確認してください。
 
 ![Azure TSI Config Part 1](../assets/TSIConfig1.PNG)
 
-As you scroll down a bit further, there is a section for configuring the "Cold" and "Warm" store options.  You must create a new storage account to act as the "Cold" storage but can optionally decide on whether to use "Warm" store features.  The image below shows both of these options configured:
+もう少し下にスクロールすると、「Cold」と「Warm」ストアのオプションを設定するセクションがあります。Cold」ストレージとして動作するためには新しいストレージアカウントを作成する必要がありますが、オプションで「Warm」ストア機能を使用するかどうかを決めることができます。下の画像は、これらのオプションの両方を設定したものです。
 
 ![Azure TSI Config Part 2](../assets/TSIConfig2.PNG)
 
-Next, select "Next: Event Source" to configure the Event Source that will provide data to the TSI instance.  Provide a name for the Event Source then select your existing IoT Hub.  For the `IoT Hub access policy name` choose the `iothubowner` policy, for more details on the available policies check out the [available documentation](https://docs.microsoft.com/en-us/azure/iot-hub/iot-hub-devguide-security?WT.mc_id=julyot-iva-pdecarlo).  In the "Consumer Group" area, in the section for configuring `IoT Hub consumer group`, select "Add" and create a new consumer group named "tsi" as shown.  See this [article](https://docs.microsoft.com/en-us/azure/iot-hub/iot-hub-devguide-messages-read-builtin?WT.mc_id=julyot-iva-pdecarlo) for more information on consumer groups.  Finally, in the "TIMESTAMP" are, set the value of "Property name" to `@timestamp` which corresponds to the timestamp field in our DeepStreamAnalytics query output. 
+次に、「次へ」を選択します。イベントソース」を選択して、TSI インスタンスにデータを提供するイベントソースを構成します。イベントソースの名前を入力し、既存の IoT Hub を選択します。`IoT Hub アクセスポリシー名`には、`iothubowner` ポリシーを選択します。 利用可能なポリシーの詳細については、利用可能な[ドキュメント](https://docs.microsoft.com/en-us/azure/iot-hub/iot-hub-devguide-security?WT.mc_id=julyot-iva-pdecarlo)を参照してください。
+Consumer Group」エリアのIoT Hubコンシューマーグループの設定セクションで、「Add」を選択し、図のように「TSI」という名前の新しいコンシューマーグループを作成します。コンシューマグループの詳細については、[こちらの記事](https://docs.microsoft.com/en-us/azure/iot-hub/iot-hub-devguide-messages-read-builtin?WT.mc_id=julyot-iva-pdecarlo)を参照してください。最後に、"TIMESTAMP "領域で、"プロパティ名 "の値を、DeepStreamAnalyticsのクエリ出力のタイムスタンプフィールドに対応する`@timestamp`に設定します。
 
 ![Azure TSI Config Part 3](../assets/TSIConfig3.PNG)
 
-On the next screen, select "Create" to begin deployment of the TSI instance.  
+次の画面で「Create」を選択して、TSIインスタンスのデプロイを開始します。
 ![Azure TSI Config Part 4](../assets/TSIConfig4.PNG)
 
-Once the deployment has completed, navigate to the TSI instance and click the link next to "Time Series Insights explorer URL":
+配置が完了したら、TSI インスタンスに移動し、「Time Series Insights explorer URL」の隣にあるリンクをクリックします。
 
 ![Azure TSI Deployed](../assets/TSIDeployed.PNG)
 
-This will bring you to the "Time Series Insights Explorer", by default you should see all devices that are currently producing data into the assigned event source, denoted by `sensorId` `iothub-connection-device-id`.
+デフォルトでは、`sensorId` `iothub-connection-device-id`で示される、割り当てられたイベントソースに現在データを生成しているすべてのデバイスが表示されます。
 
 ![Azure TSI Default Explorer](../assets/TSIDefaultExplorer.PNG)
 
-Select "Model" on the left-hand side and we will begin to configure the data model and hierarchy for our instances.
+左側の "Model "を選択して、インスタンスのデータモデルと階層を設定し始めます。
 
 ![Azure TSI Default Model](../assets/TSIDefaultModel.PNG)
 
-First, we will select "Types", then "Upload JSON".  When prompted, upload the [`ObjectDetectionType.json`](../services/TIME_SERIES_INSIGHTS/Types/ObjectDetectionType.json) file located in `../services/TIME_SERIES_INSIGHTS/Types`, then select "Upload".
+
+まず、「Types」を選択し、「Upload JSON」を選択します。プロンプトが表示されたら、`../services/TIME_SERIES_INSIGHTS/Types`にある[`ObjectDetectionType.json`](../services/TIME_SERIES_INSIGHTS/Types/ObjectDetectionType.json)ファイルをアップロードし、「アップロード」を選択します。
+
+
 
 ![Azure TSI Types](../assets/TSITypes.PNG)
 
-Perusing this ObjectDetectionType defintion, you will notice capabilities for reporting "Detections", "Person", and "Vehicle".  Take note of the query syntax used in these examples and modify to meet your requirements.  This will allow us to model data which meets the query criteria in the TSI explorer dashboard.
+この ObjectDetectionType 定義を見ると、"Detections"、"Person"、および "Vehicle" をレポートする機能があることに気づくでしょう。これらの例で使用されているクエリ構文に注意して、要件を満たすように修正してください。これにより、TSI エクスプローラのダッシュボードでクエリ基準を満たすデータをモデル化することができます。
 
-Next, select "Hierarchies", then "Upload JSON".  When prompted, upload the [`Locations.json`](../services/TIME_SERIES_INSIGHTS/Hierarchies/Locations.json) file located in `../services/TIME_SERIES_INSIGHTS/Hierarchies`, then select "Upload". 
+次に、"Hierarchies "を選択し、次に "Upload JSON "を選択します。プロンプトが表示されたら、`../services/TIME_SERIES_INSIGHTS/Hierarchies`にある[`Locations.json`](../services/TIME_SERIES_INSIGHTS/Hierarchies/Locations.json)ファイルをアップロードし、「アップロード」を選択します。
 
 ![Azure TSI Hierarchies](../assets/TSIHierarchies.PNG)
 
-This definition will allow us to organize our devices by location when displayed in the TSI dashboard.
+この定義により、TSI ダッシュボードに表示されたときに、デバイスを場所別に整理できるようになります。
 
-Next, select "Instances" and for each device, select "Edit", set "Type" to "ObjectDetectionType", then rename your device to something preferable.
+次に、「インスタンス」を選択し、各デバイスについて「編集」を選択し、「タイプ」を「ObjectDetectionType」に設定し、デバイスの名前を好ましいものに変更します。
 
 ![Azure TSI Instances Part 1](../assets/TSIInstancePart1.PNG)
 
-Next, select "Instances" and again, for each device, select "Edit", then select "Instance fields" and enter a value for "Address".  This will allow us to organize devices by their address value in the TSI dashboard.
+次に「インスタンス」を選択し、再度、各デバイスごとに「編集」を選択し、「インスタンスフィールド」を選択して「アドレス」に値を入力します。 これで、TSIダッシュボードでデバイスをアドレス値で整理することができるようになります。
 
 ![Azure TSI Instances Part 2](../assets/TSIInstancePart2.PNG)
 
-Once you have completed this for all devices, you should have a result similar to the following:
+すべてのデバイスについてこれを完了すると、以下のような結果が得られるはずです。
 
 ![Azure TSI Instances Part 3](../assets/TSIInstancePart3.PNG)
 
-Next, select "Analyze" and head back to the TSI Explorer dashboard.  You can now expand the "Locations" entry, select the value of the location of interest and begin plotting detections, person, or vehicle data from that device.
+次に、「分析」を選択して、TSI Explorerのダッシュボードに戻ります。 これで、「場所」エントリを展開し、関心のある場所の値を選択して、そのデバイスから検出、人物、または車両のデータをプロットし始めることができます。
 
 ![Azure TSI Explorer Modified](../assets/TSIExplorerModified.PNG)
 
 ## Module 4.6 : Next Steps
 
-Now that you are familiar with the relationship between the filtered data being produced by the DeepStreamAnalytics Azure Stream Analytics Job and the modeled data in Time Series Insights, it is possible to customize your solution further to fit your use case.  
+DeepStreamAnalytics Azure Stream Analytics ジョブによって生成されるフィルタリングされたデータと時系列インサイトでモデル化されたデータとの関係を理解したところで、ユースケースに合わせてソリューションをさらにカスタマイズすることができます。 
 
-It is highly recommended to familiarize further with the features and functionalities available by checking out the following resources.
+以下のリソースをチェックして、利用可能な機能と機能についてさらに詳しく知ることを強くお勧めします。
 
 [Azure Time Sereies Insights Documentation](https://docs.microsoft.com/en-us/azure/time-series-insights/time-series-insights-overview?WT.mc_id=julyot-iva-pdecarlo)
 
