@@ -1,43 +1,44 @@
 ## Module 3 : Develop and deploy Custom Object Detection Models with IoT Edge DeepStream SDK Module
 
-At this point, you should have deployed a custom DeepStream Configuration that is able to consume input from your desired sources.  We will now look into ways to customize the object detection model that is employed in that configuration to enable to you to create a fully customized Intelligent Video Analytics Pipeline.
+この時点で、必要なソースからの入力を消費できるカスタムのDeepStream構成がデプロイされているはずです。ここでは、その構成で採用されているオブジェクト検出モデルをカスタマイズして、完全にカスタマイズされたIntelligent Video Analytics Pipelineを作成する方法を見ていきます。
 
-This section will assume that you might be brand new to the world of Computer Vision / Artificial Intelligence and that you are interested in the end goal of using a Custom Object Detection model that detects objects that you train it to detect.  If you are interested in obtaining accurate detection of common objects immediately, without the need to train up a custom model, we will also demonstrate how to employ an academic-grade pre-trained object detection model [(YoloV3)](https://pjreddie.com/darknet/yolo/) which has been trained on [80 common objects](../services/YOLOV3/labels.txt).
+このセクションでは、コンピュータビジョン/人工知能の世界に慣れていない方や、カスタムオブジェクト検出モデルを使用して、訓練して検出するオブジェクトを検出するという最終目標に興味がある方を想定しています。カスタムモデルをトレーニングする必要なく、すぐに一般的な物体の正確な検出を得ることに興味がある場合は、[80個の一般的物体](../services/YOLOV3/labels.txt)でトレーニングされたアカデミックグレードの事前トレーニング済み物体検出モデル[(YoloV3)](https://pjreddie.com/darknet/yolo/)を採用する方法を実演します。
 
-If you wish to follow along with the steps in this module, we have recorded a livestream presentation titled "[Develop and deploy Custom Object Detection Models with IoT Edge DeepSteam SDK Module](https://www.youtube.com/watch?v=kv0eTobemug)" that walks through the steps below in great detail.
+このモジュールのステップに沿って進みたい場合は、「[Develop and deploy Custom Object Detection Models with IoT Edge DeepSteam SDK Module](https://www.youtube.com/watch?v=kv0eTobemug)」と題したライブストリーム・プレゼンテーションを録画しましたので、以下のステップを詳細に説明します。
 
 [![Develop and deploy Custom Object Detection Models with IoT Edge DeepSteam SDK Module](../assets/LiveStream3.PNG)](https://www.youtube.com/watch?v=kv0eTobemug)
 
 
 ### Module 3.1 : Training a custom object detection model using Custom Vision AI
 
-*Note: These steps assume that the NVIDIADeepStreamSDK module is configured to reference the `DSConfig-CustomVisionAI.txt` DeepStream configuration*
 
-Microsoft provides a [Custom Vision](https://www.customvision.ai/?WT.mc_id=julyot-iva-pdecarlo) service as part of [Cognitive Services](https://azure.microsoft.com/en-us/services/cognitive-services/?WT.mc_id=julyot-iva-pdecarlo) which allows you to very easily train and export custom object detection models.  To get started, create an account at [customvision.ai](http://customvision.ai/?WT.mc_id=julyot-iva-pdecarlo) then begin a new project with the following options:
+注：これらの手順は、NVIDIADeepStreamSDKモジュールが`DSConfig-CustomVisionAI.txt`のDeepStream構成を参照するように構成されていることを前提としています。
+
+Microsoftは[Cognitive Services](https://azure.microsoft.com/en-us/services/cognitive-services/?WT.mc_id=julyot-iva-pdecarlo) の一部として[Custom Vision](https://www.customvision.ai/?WT.mc_id=julyot-iva-pdecarlo)を提供しており、カスタムオブジェクト検出モデルのトレーニングやエクスポートを非常に簡単に行うことができます。開始するには、[customvision.ai](http://customvision.ai/?WT.mc_id=julyot-iva-pdecarlo)でアカウントを作成し、以下のオプションで新しいプロジェクトを開始します。
 
 ![New Custom Vision AI Project](../assets/CreateNewCustomVisionAI.PNG)
 
-Once created, upload at least 15 images per tag (object) that you are interested in detecting. Here is an example using 15 images of myself to train a "person" detector:
+作成したら、検出したいタグ（オブジェクト）ごとに少なくとも15枚の画像をアップロードします。ここでは、「人」検出器を訓練するために、15枚の自分の画像を使用した例を示します。
 
 ![Upload Samples](../assets/UploadSamplesCustomVisionAI.PNG)
 
-Ensure that each image in the training set is tagged appropriately with an associated bounding box around the intended object:
+訓練セット内の各画像が、目的の対象物の周囲に関連する境界ボックスで適切にタグ付けされていることを確認します。
 
 ![Tag Samples](../assets/TagSamplesCustomVisionAI.PNG)
 
-With your images tagged, select "Train" and then "Quick Training":
+画像にタグを付けた状態で、「トレーニング」を選択し、「クイックトレーニング」を選択します。
 
 ![Train Samples](../assets/TrainSamplesCustomVisionAI.PNG)
 
-Next, select "Performance", and then "Export":
+次に「パフォーマンス」を選択し、「エクスポート」を選択します。
 
 ![Export Model](../assets/ExportCustomVisionAI.PNG)
 
-Select ONNX and then right-click the "Download" button to copy the link to download your resulting model:
+ONNXを選択し、「ダウンロード」ボタンを右クリックして、結果のモデルをダウンロードするためのリンクをコピーします。
 
 ![Download Model](../assets/DownloadCustomVisionAI.PNG)
 
-Take note of this value as we will use it in the next section. The copied text should look similar to the following:
+次のセクションで使用するので、この値に注意してください。コピーされたテキストは以下のようになるはずです。
 
 ```
 https://irisscuprodstore.blob.core.windows.net/m-ad5281beaf20440a8f3f046e0e7741af/e3ebcf6e22934c7e89ae39ffe2049a46.ONNX.zip?sv=2017-04-17&sr=b&sig=A%2F9raRar12TSTCvH7D72OxD6mBqvRY5doovtwV4Bjt0%3D&se=2020-04-15T20%3A43%3A26Z&sp=r
@@ -45,9 +46,9 @@ https://irisscuprodstore.blob.core.windows.net/m-ad5281beaf20440a8f3f046e0e7741a
 
 ### Module 3.2 : Using a Custom Vision AI Object Detection Model with NVIDIA DeepStream
 
-If we wish to use our new model with our existing application, all we have to do is update the model present in `/data/misc/storage/Intelligent-Video-Analytics-with-NVIDIA-Jetson-and-Microsoft-Azure/services/CUSTOM_VISION_AI`.
+新しいモデルを既存のアプリケーションで使用したい場合は、`/data/misc/storage/Intelligent-Video-Analytics-with-NVIDIA-Jetson-and-Microsoft-Azure/services/CUSTOM_VISION_AI`にあるモデルを更新するだけです。
 
-This can be done on your Jetson device using the commands below, just replace the link in the `wget` command to point to your exported Custom Vision AI model from the previous step.
+これは以下のコマンドを使ってJetsonデバイス上で行うことができます。前のステップでエクスポートしたカスタムビジョンAIモデルを指すように、`wget`コマンドのリンクを置き換えるだけです。
 
 ```
 #Delete the contents of the CUSTOM_VISION_AI directory to remove existing model and TensorRT engine
@@ -70,9 +71,9 @@ sudo apt install -y dos2unix
 dos2unix labels.txt
 ```
 
-It is important that you follow this process every time that you update the model (including removing the contents of the `CUSTOM_VISON_AI` directory) as DeepStream will generate a TensorRT engine file on next run if one does not exist.  If this file already exists, you may unintentionally end up referencing an engine that was generated by an older model when what you really want to do is regenerate a new engine for the new model!
+モデルを更新するたびに（`CUSTOM_VISON_AI`ディレクトリの内容を削除することも含めて）このプロセスに従うことが重要です。 このファイルが既に存在する場合、新しいモデルのために新しいエンジンを再生成したいときに、古いモデルで生成されたエンジンを参照してしまう可能性があります。
 
-The directory contents of `/data/misc/storage/Intelligent-Video-Analytics-with-NVIDIA-Jetson-and-Microsoft-Azure/services/CUSTOM_VISION_AI` should now contain the following:
+data/misc/storage/Intelligent-Video-Analytics-with-NVIDIA-Jetson-and-Microsoft-Azure/services/CUSTOM_VISION_AI`のディレクトリの内容は以下のようになっているはずです。
 
 ```
 CSharp  
@@ -84,20 +85,20 @@ model.zip
 python
 ```
 
-Technically, our DeepStream configuration only needs access to the labels.txt and model.onnx files. The labels.txt file contains the object detection classes that are supported by your model.  This will consist of the tags used to train your model in CustomVision.AI.  The model.onnx file is an [ONNX](http://onnx.ai/) based [YoloV2Tiny](https://pjreddie.com/darknet/yolov2/) type object detector model.  
+技術的には、DeepStreamの設定で必要なのはlabel.txtとmodel.onnxファイルへのアクセスだけです。labels.txtファイルには、モデルがサポートするオブジェクト検出クラスが含まれています。 これは、CustomVision.AIでモデルを訓練するために使用されるタグで構成されます。 model.onnxファイルは、[ONNX](http://onnx.ai/)ベースの[YoloV2Tiny](https://pjreddie.com/darknet/yolov2/)タイプのオブジェクト検出モデルです。 
 
-After the model has been downloaded and extracted, restart the DeepStreamSDK module so that it can begin using your new model with:
+モデルをダウンロードして抽出した後、DeepStreamSDKモジュールを再起動して、新しいモデルの使用を開始できるようにします。
+
 ```
 docker rm -f NVIDIADeepStreamSDK
 ```
 
-Wait a few moments for the NVIDIADeepStreamSDK module to restart, then run the following to view the logs of the NVIDIADeepStreamSDK module:
+NVIDIADeepStreamSDK モジュールが再起動するまでしばらく待ってから、以下を実行して NVIDIADeepStreamSDK モジュールのログを表示します。
 ```
 docker logs -f NVIDIADeepStreamSDK
 ```
 
-You should receive output similar to the following:
-
+以下のような出力が表示されるはずです。
 ```
 2020-06-10 19:39:48.485400: I tensorflow/stream_executor/platform/default/dso_loader.cc:48] Successfully opened dynamic library libcudart.so.10.2
 
@@ -125,9 +126,10 @@ Doc string:
 ----------------------------------------------------------------
 ```
 
-The error messages indicate that a TensorRT engine does not yet exist for the referenced `model.onnx`.  As mentioned earlier, DeepStream will attempt to regenerate the engine if one is not present.  The first execution will take some extra time to start as the TensorRT engine is generated, but will use the newly generated engine on subsequent executions.
+エラーメッセージは、参照された`model.onnx`に対してTensorRTエンジンがまだ存在しないことを示しています。 前述のように、エンジンが存在しない場合、DeepStreamはエンジンの再生成を試みます。 最初の実行では、TensorRTエンジンが生成されるため、起動に時間がかかりますが、その後の実行では新しく生成されたエンジンが使用されます。
 
-After the TensorRT engine is regenerated, the directory contents of `/data/misc/storage/Intelligent-Video-Analytics-with-NVIDIA-Jetson-and-Microsoft-Azure/services/CUSTOM_VISION_AI` should now contain the following (Note: `model.onnx_b1_gpu0_fp32.engine` is now present):
+TensorRTエンジンが再生成された後、`/data/misc/storage/Intelligent-Video-Analytics-with-NVIDIA-Jetson-and-Microsoft-Azure/services/CUSTOM_VISION_AI`のディレクトリの内容は以下のようになるはずです(注: `model.onnx_b1_gpu0_fp32.engine`が存在するようになりました)。
+
 
 ```
 CSharp
@@ -142,53 +144,66 @@ python
 
 ### Module 3.3 : Using the Deployed CameraTaggingModule to gather Training Samples
 
-The [Intelligent Video Analytics deployment ships with a Camera Tagging Module](https://github.com/toolboc/Intelligent-Video-Analytics-with-NVIDIA-Jetson-and-Microsoft-Azure/blob/master/deployment-iothub/deployment.template.json#L97) that can assist in gathering Training Samples for use with CustomVision.AI.
+[Intelligent Video Analytics deployment ships with a Camera Tagging Module](https://github.com/toolboc/Intelligent-Video-Analytics-with-NVIDIA-Jetson-and-Microsoft-Azure/blob/master/deployment-iothub/deployment.template.json#L97) の導入には、CustomVision.AIで使用するためのトレーニング・サンプルの収集を支援するカメラ・タギング・モジュールが含まれています。
 
 ![CameraTaggingModule](../assets/CameraTaggingModule.PNG)
 
-The [Azure IoT Edge Camera Tagging Module](https://github.com/microsoft/vision-ai-developer-kit/tree/master/samples/official/camera-tagging) can assist by providing automated methods for capturing and uploading training samples from accessible RTSP streams in open and air-gapped networks, with ability to upload samples directly to CustomVision.AI or employ the [`azureblobstorageoniotedge` module](https://github.com/toolboc/Intelligent-Video-Analytics-with-NVIDIA-Jetson-and-Microsoft-Azure/blob/master/deployment-iothub/deployment.template.json#L161) to store and forward to an Azure Storage container.  This enables solution builders to produce varied and precise AI models using data gathered from a module running on any IoT Edge capable device.
+[Azure IoT Edge Camera Tagging Module](https://github.com/microsoft/vision-ai-developer-kit/tree/master/samples/official/camera-tagging)は、オープンネットワークとエアギャップネットワークのアクセス可能なRTSPストリームからトレーニングサンプルをキャプチャしてアップロードする自動化された方法を提供することで支援することができ、サンプルを直接CustomVision.AIにアップロードする機能や、Azure Storageコンテナに保存して転送するための[`azureblobstorageoniotedge` module](https://github.com/toolboc/Intelligent-Video-Analytics-with-NVIDIA-Jetson-and-Microsoft-Azure/blob/master/deployment-iothub/deployment.template.json#L161)をデプロイすることができます。これにより、ソリューションビルダーは、任意のIoT Edge対応デバイス上で実行されているモジュールから収集したデータを使用して、多様で正確なAIモデルを作成することができます。
 
-For detailed instructions on how to use the features of the 
-CameraTaggingModule, consult this [article](https://dev.to/azure/introduction-to-the-azure-iot-edge-camera-tagging-module-di8).
+
+
+CameraTaggingModuleの機能を使用する方法の詳細については、こちらの[記事](https://dev.to/azure/introduction-to-the-azure-iot-edge-camera-tagging-module-di8)を参照してください。
 
 ### Module 3.4 : The CustomVisionAI YoloParser 
 
-The onnx formatted model that we exported from CustomVision.AI is a [YoloV2Tiny](https://pjreddie.com/darknet/yolov2/) based object detector.  [Yolo](https://pjreddie.com/darknet/yolo/) is an umbrella naming convention of object detectors created by [Joseph Redmon](https://pjreddie.com/).  The "Tiny" denotes that we are using a version of Yolov2* which targets resource constrained devices.  The "Tiny" version favors speed in exchange for the accuracy present in it's "non-Tiny" variant.  This type of model is suitable for the Jetson Nano, but could be exceeded on more powerful hardware like the Jetson Xavier family of devices.  
 
-In this section, we will discuss Custom Yolo Parser used by DeepStream to parse the .onnx formatted CustomVision.AI model into a TensorRT engine via (`libnvdsinfer_custom_impl_Yolo.so`).  This shared object is referred to in [the Primary Inference Engine configuration file](https://github.com/toolboc/Intelligent-Video-Analytics-with-NVIDIA-Jetson-and-Microsoft-Azure/blob/master/services/DEEPSTREAM/configs/DSConfig-CustomVisionAI.txt#L143) in the [value of `custom-lib-path`](https://github.com/toolboc/Intelligent-Video-Analytics-with-NVIDIA-Jetson-and-Microsoft-Azure/blob/master/services/DEEPSTREAM/configs/config_infer_primary_CustomVisionAI.txt#L79).  This file also mentions a [`parse-bbox-func-name`](https://github.com/toolboc/Intelligent-Video-Analytics-with-NVIDIA-Jetson-and-Microsoft-Azure/blob/master/services/DEEPSTREAM/configs/config_infer_primary_CustomVisionAI.txt#L78) which corresponds to a function originating in [`nvdsparsebbox_Yolo.cpp`](https://github.com/toolboc/Intelligent-Video-Analytics-with-NVIDIA-Jetson-and-Microsoft-Azure/blob/master/services/DEEPSTREAM/YoloParser/CustomVision_DeepStream5.0_JetPack4.4/nvdsparsebbox_Yolo.cpp#L457)
+CustomVision.AIからエクスポートしたonnxフォーマットのモデルは、[YoloV2Tiny](https://pjreddie.com/darknet/yolov2/)ベースのオブジェクト検出器です。[Yolo](https://pjreddie.com/darknet/yolo/)は、[Joseph Redmon](https://pjreddie.com/)によって作成されたオブジェクト検出器の包括的な命名規則です。Tiny」は、リソースに制約のあるデバイスを対象としたYolov2*のバージョンを使用していることを示しています。Tiny」バージョンは、「non-Tiny」バージョンの精度と引き換えに、スピードを重視しています。このタイプのモデルは Jetson Nano に適していますが、Jetson Xavier ファミリーのようなより強力なハードウェアではそれを超える可能性があります。
 
-The CustomVisionAI YoloParser can be found at:
+このセクションでは、(`libnvdsinfer_custom_impl_Yolo.so`)を介して.onnxフォーマットされたCustomVision.AIモデルをTensorRTエンジンにパースするためにDeepStreamが使用するCustom Yolo Parserについて説明します。この共有オブジェクトは、[the Primary Inference Engine configuration file](https://github.com/toolboc/Intelligent-Video-Analytics-with-NVIDIA-Jetson-and-Microsoft-Azure/blob/master/services/DEEPSTREAM/configs/DSConfig-CustomVisionAI.txt#L143)では、[`custom-lib-path`の値](https://github.com/toolboc/Intelligent-Video-Analytics-with-NVIDIA-Jetson-and-Microsoft-Azure/blob/master/services/DEEPSTREAM/configs/config_infer_primary_CustomVisionAI.txt#L79)で参照されています。このファイルでは、[`nvdsparsebbox_Yolo.cpp`](https://github.com/toolboc/Intelligent-Video-Analytics-with-NVIDIA-Jetson-and-Microsoft-Azure/blob/master/services/DEEPSTREAM/YoloParser/CustomVision_DeepStream5.0_JetPack4.4/nvdsparsebbox_Yolo.cpp#L457) に由来する関数に対応する [`parse-bbox-func-name`](https://github.com/toolboc/Intelligent-Video-Analytics-with-NVIDIA-Jetson-and-Microsoft-Azure/blob/master/services/DEEPSTREAM/configs/config_infer_primary_CustomVisionAI.txt#L78) も言及されています。
+
+CustomVisionAI YoloParserは以下にあります。
+
 ```
 /data/misc/storage/Intelligent-Video-Analytics-with-NVIDIA-Jetson-and-Microsoft-Azure/services/DEEPSTREAM/YoloParser/CustomVision_DeepStream5.0_JetPack4.4
 ```
 
-Within this folder, you will find the pre-built Custom Yolo Parser itself, `libnvdsinfer_custom_impl_Yolo.so`, and a Makefile along with instructions on how to build the parser from source.  This source and instructions correspond to building the parser against DeepStream5.0 running on JetPack 4.4 (The Jetson device OS / libraries version). If you intend to run on against different versions of either, you will likely need to recompile this from source.
 
-You may be interested in modifying the [`nvdsparsebbox_Yolo.cpp`](../services/DEEPSTREAM/YoloParser/CustomVision_DeepStream5.0_JetPack4.4/nvdsparsebbox_Yolo.cpp).  For example, you can uncomment lines 432-437 to output the confidence of detected objects.  You can also modify the Non-Maximal Suppression Threshold  (`kNMS_THRESH`) and Confidence Threshold (`kPROB_THRESH`) to tune your model for better accuracy.  These parameters are explained in detail in the following [article](https://towardsdatascience.com/you-only-look-once-yolo-implementing-yolo-in-less-than-30-lines-of-python-code-97fb9835bfd2).
+このフォルダ内には、カスタムYoloパーサー、`libnvdsinfer_custom_impl_Yolo.so`、ソースからパーサーをビルドする方法を説明するMakefileがあります。このソースと説明は、JetPack 4.4（JetsonデバイスのOS/ライブラリバージョン）上で動作するDeepStream5.0に対してパーサをビルドするためのものです。もし、異なるバージョンのいずれかで動作させたい場合は、ソースから再コンパイルする必要があるでしょう。
+
+[`nvdsparsebbox_Yolo.cpp`](../services/DEEPSTREAM/YoloParser/CustomVision_DeepStream5.0_JetPack4.4/nvdsparsebbox_Yolo.cpp) を修正することに興味があるかもしれません。例えば、432-437行目のコメントを外して、検出されたオブジェクトの信頼度を出力することができます。また、非最大抑制閾値（kNMS_THRESH）と信頼度閾値（`kPROB_THRESH`）を変更して、より良い精度を得るためにモデルを調整することもできます。これらのパラメータについては、以下の[記事](https://towardsdatascience.com/you-only-look-once-yolo-implementing-yolo-in-less-than-30-lines-of-python-code-97fb9835bfd2)で詳しく説明します。
 
 ### Module 3.5 : The CustomYolo YoloParser
 
-DeepStream 5.0 ships with a parser capable of working with the stock YoloV3 weights and configurations.  For details on how this parser works, you can consult the DeepStream 4.0 documentation for ["Custom YOLO Model in the DeepStream YOLO App"](https://docs.nvidia.com/metropolis/deepstream/4.0/Custom_YOLO_Model_in_the_DeepStream_YOLO_App.pdf).
 
-The CustomYolo YoloParser can be found at:
+DeepStream 5.0には、純正のYoloV3のウェイトと構成を扱うことができるパーサーが同梱されています。このパーサーがどのように動作するかの詳細については、DeepStream 4.0のドキュメント「["Custom YOLO Model in the DeepStream YOLO App"](https://docs.nvidia.com/metropolis/deepstream/4.0/Custom_YOLO_Model_in_the_DeepStream_YOLO_App.pdf)」を参照してください。
+
+CustomYolo YoloParserは以下にあります。
+
 ```
 /data/misc/storage/Intelligent-Video-Analytics-with-NVIDIA-Jetson-and-Microsoft-Azure/services/DEEPSTREAM/YoloParser/CustomYolo_DeepStream5.0_JetPack4.4
 ```
 
-Within this folder, you will find the pre-built Custom Yolo Parser itself, `libnvdsinfer_custom_impl_Yolo.so`, and a Makefile along with instructions on how to build the parser from source.  This source and instructions correspond to building the parser against DeepStream5.0 running on JetPack 4.4 (The Jetson device OS / libraries version) and requires that DeepStream 5.0 has been installed onto the host. If you intend to run on against different versions of either, you will likely need to recompile this from source.
+このフォルダ内には、カスタムYoloパーサー、`libnvdsinfer_custom_impl_Yolo.so`と、ソースからパーサーをビルドする方法を説明するMakefileがあります。このソースと説明は、JetPack 4.4 (JetsonデバイスOS/ライブラリバージョン)上で動作するDeepStream5.0に対してパーサをビルドするためのもので、DeepStream5.0がホストにインストールされている必要があります。異なるバージョンのどちらかに対して実行する場合は、ソースから再コンパイルする必要があります。
 
-You may be interested in modifying in  `/opt/nvidia/deepstream/deepstream-5.0/sources/objectDetector_Yolo/nvdsinfer_custom_impl_Yolonvdsparsebbox_Yolo.cpp`.  Note that this file will only exist if you have installed DeepStream 5.0 on the host system.  It is important to note that if you plan on using a custom YoloV3* model with this parser, you will need to modify line 33 of this file to reflect the number of object detection classes present in your Yolo model:
+`/opt/nvidia/deepstream/deepstream-5.0/sources/objectDetector_Yolo/nvdsinfer_custom_impl_Yolonvdsparsebbox_Yolo.cpp` を変更することに興味があるかもしれません。このファイルは、ホストシステムにDeepStream 5.0をインストールした場合にのみ存在することに注意してください。このパーサーでカスタムYoloV3*モデルを使用する場合、Yoloモデルに存在するオブジェクト検出クラスの数を反映させるために、このファイルの33行目を修正する必要があることに注意してください。
+
 ```
 static const int NUM_CLASSES_YOLO = 80
 ```
 
-You can also modify the Non-Maximal Suppression Threshold  (`nms-iou-threshold`) and Confidence Threshold (`pre-cluster-threshold`) to tune your model for better accuracy, these are available in [config_infer_primary_yoloV3_tiny.txt](https://github.com/toolboc/Intelligent-Video-Analytics-with-NVIDIA-Jetson-and-Microsoft-Azure/blob/master/services/DEEPSTREAM/configs/config_infer_primary_yoloV3_tiny.txt#L91) and [config_infer_primary_yoloV3.txt](https://github.com/toolboc/Intelligent-Video-Analytics-with-NVIDIA-Jetson-and-Microsoft-Azure/blob/master/services/DEEPSTREAM/configs/config_infer_primary_yoloV3.txt).  These parameters are explained in detail in the following [article](https://towardsdatascience.com/you-only-look-once-yolo-implementing-yolo-in-less-than-30-lines-of-python-code-97fb9835bfd2).
+
+また、より良い精度を得るためにモデルを調整するために、Non-Maximal Suppression Threshold (`nms-iou-threshold`)とConfidence Threshold (`pre-cluster-threshold`)を変更することもできます。それらは[config_infer_primary_yoloV3_tiny.txt](https://github.com/toolboc/Intelligent-Video-Analytics-with-NVIDIA-Jetson-and-Microsoft-Azure/blob/master/services/DEEPSTREAM/configs/config_infer_primary_yoloV3_tiny.txt#L91) と [config_infer_primary_yoloV3.txt](https://github.com/toolboc/Intelligent-Video-Analytics-with-NVIDIA-Jetson-and-Microsoft-Azure/blob/master/services/DEEPSTREAM/configs/config_infer_primary_yoloV3.txt)で入手可能です．
+
+これらのパラメータについては、以下の[記事](https://towardsdatascience.com/you-only-look-once-yolo-implementing-yolo-in-less-than-30-lines-of-python-code-97fb9835bfd2)で詳しく説明しています。
 
 ### Module 3.6 : Using a YoloV3* Object Detection Model with NVIDIA DeepStream
 
-This section will walk through steps to employ YoloV3 or YoloV3Tiny in a DeepStream configuration.
 
-Yolo requires that .weights and .cfg files are present and this project does not ship with them.  They can be obtained by running:
+このセクションでは、DeepStreamの設定でYoloV3またはYoloV3Tinyを使用するための手順を説明します。
+
+Yoloは.weightsと.cfgファイルが必要で、このプロジェクトには含まれていません。これらのファイルは実行することで入手できます。
+
+
 
 ```
 cd /data/misc/storage/Intelligent-Video-Analytics-with-NVIDIA-Jetson-and-Microsoft-Azure/services/YOLOV3
@@ -196,7 +211,10 @@ cd /data/misc/storage/Intelligent-Video-Analytics-with-NVIDIA-Jetson-and-Microso
 ./downloadYoloWeights.sh
 ```
 
-Once the script has finished, you should see the following files in the `/data/misc/storage/Intelligent-Video-Analytics-with-NVIDIA-Jetson-and-Microsoft-Azure/services/YOLOV3` directory:
+
+スクリプトが終了すると、`/data/misc/storage/Intelligent-Video-Analytics-with-NVIDIA-Jetson-and-Microsoft-Azure/services/YOLOV3`ディレクトリに以下のファイルが表示されるはずです。
+
+
 
 ```
 downloadYoloWeights.sh  
@@ -207,26 +225,31 @@ labels.txt
 yolov3.weights
 ```
 
-To use YoloV3 or YoloV3Tiny with the NVIDIADeepStreamSDK module, you must update the Entrypoint of the NVIDIADeepStreamSDK module in [deployment.template.json](https://github.com/toolboc/Intelligent-Video-Analytics-with-NVIDIA-Jetson-and-Microsoft-Azure/blob/master/deployment-iothub/deployment.template.json#L71) to reference [DSConfig-YoloV3.txt](../services/DEEPSTREAM/configs/DSConfig-YoloV3.txt) or [DSConfig-YoloV3Tiny.txt](../services/DEEPSTREAM/configs/DSConfig-YoloV3Tiny.txt) then follow the steps in [Module 2.5](https://github.com/toolboc/Intelligent-Video-Analytics-with-NVIDIA-Jetson-and-Microsoft-Azure/blob/master/docs/Module%202%20-%20Configure%20and%20Deploy%20Intelligent%20Video%20Analytics%20to%20IoT%20Edge%20Runtime%20on%20NVIDIA%20Jetson.md#module-25--generate-and-apply-the-iot-hub-based-deployment-configuration) to recreate and apply the deployment.  You will also likely need to update the newly referenced config ([DSConfig-YoloV3.txt](../services/DEEPSTREAM/configs/DSConfig-YoloV3.txt) or [DSConfig-YoloV3Tiny.txt](../services/DEEPSTREAM/configs/DSConfig-YoloV3Tiny.txt)) to reference any of the customizations explained previously in [Module 2.6](https://github.com/toolboc/Intelligent-Video-Analytics-with-NVIDIA-Jetson-and-Microsoft-Azure/blob/master/docs/Module%202%20-%20Configure%20and%20Deploy%20Intelligent%20Video%20Analytics%20to%20IoT%20Edge%20Runtime%20on%20NVIDIA%20Jetson.md#module-26--customizing-the-sample-deployment).
 
-On first execution, by default, DeepStream will create a TensorRT engine file for the Yolo model in it's [current working directory](https://github.com/toolboc/Intelligent-Video-Analytics-with-NVIDIA-Jetson-and-Microsoft-Azure/blob/master/deployment-iothub/deployment.template.json#L88) at:
+YoloV3 または YoloV3Tiny を NVIDIADeepStreamSDK モジュールで使用するには、[deployment.template.json](https://github.com/toolboc/Intelligent-Video-Analytics-with-NVIDIA-Jetson-and-Microsoft-Azure/blob/master/deployment-iothub/deployment.template.json#L71) の NVIDIADeepStreamSDK モジュールの Entrypoint を更新して [DSConfig-YoloV3.txt](../services/DEEPSTREAM/configs/DSConfig-YoloV3.txt) または [DSConfig-YoloV3Tiny.txt](../services/DEEPSTREAM/configs/DSConfig-YoloV3Tiny.txt) を参照し、[Module 2.5](https://github.com/toolboc/Intelligent-Video-Analytics-with-NVIDIA-Jetson-and-Microsoft-Azure/blob/master/docs/Module%202%20-%20Configure%20and%20Deploy%20Intelligent%20Video%20Analytics%20to%20IoT%20Edge%20Runtime%20on%20NVIDIA%20Jetson.md#module-25--generate-and-apply-the-iot-hub-based-deployment-configuration) の手順にしたがってディプロイメントを再作成して適用する必要があります。また、[Module 2.6](https://github.com/toolboc/Intelligent-Video-Analytics-with-NVIDIA-Jetson-and-Microsoft-Azure/blob/master/docs/Module%202%20-%20Configure%20and%20Deploy%20Intelligent%20Video%20Analytics%20to%20IoT%20Edge%20Runtime%20on%20NVIDIA%20Jetson.md#module-26--customizing-the-sample-deployment)で説明したカスタマイズを参照するために、新しく参照された設定(DSConfig-YoloV3.txtまたはDSConfig-YoloV3Tiny.txt)を更新する必要があります。
+
+最初の実行時、デフォルトでは、DeepStreamはYoloモデル用のTensorRTエンジンファイルを[現在の作業ディレクトリ](https://github.com/toolboc/Intelligent-Video-Analytics-with-NVIDIA-Jetson-and-Microsoft-Azure/blob/master/deployment-iothub/deployment.template.json#L88)に作成します。
 
 ```
 /data/misc/storage/Intelligent-Video-Analytics-with-NVIDIA-Jetson-and-Microsoft-Azure/services/DEEPSTREAM/configs
 ```
 
-The YOLOV3* configurations for [config_infer_primary_yoloV3.txt](https://github.com/toolboc/Intelligent-Video-Analytics-with-NVIDIA-Jetson-and-Microsoft-Azure/blob/master/services/DEEPSTREAM/configs/config_infer_primary_yoloV3.txt#L67) and [config_infer_primary_yoloV3_tiny.txt](https://github.com/toolboc/Intelligent-Video-Analytics-with-NVIDIA-Jetson-and-Microsoft-Azure/blob/master/services/DEEPSTREAM/configs/config_infer_primary_yoloV3_tiny.txt#L66) can be sped up by copying and renaming the resulting model file that is generated by DeepStream (model_b*_gpu0_fp16.engine) to the path:
+
+[config_infer_primary_yoloV3.txt](https://github.com/toolboc/Intelligent-Video-Analytics-with-NVIDIA-Jetson-and-Microsoft-Azure/blob/master/services/DEEPSTREAM/configs/config_infer_primary_yoloV3.txt#L67)と[config_infer_primary_yoloV3_tiny.txt](https://github.com/toolboc/Intelligent-Video-Analytics-with-NVIDIA-Jetson-and-Microsoft-Azure/blob/master/services/DEEPSTREAM/configs/config_infer_primary_yoloV3_tiny.txt#L66)のYOLOV3*コンフィギュレーションは、DeepStreamで生成された結果のモデルファイル(model_b*_gpu0_fp16.engine)をパスにコピーして名前を変更することで、高速化することができます。
+
+
 
 ```
 /data/misc/storage/Intelligent-Video-Analytics-with-NVIDIA-Jetson-and-Microsoft-Azure/services/YOLOV3/
 ```
 
-By default, the YOLOV3 configuration expects the engine to be named `yolov3_model_b1_gpu0_fp16.engine` whereas YOLOV3 expects the name `yolov3_tiny_model_b1_gpu0_fp16.engine`.
+デフォルトでは、YOLOV3の構成ではエンジンの名前が`yolov3_model_b1_gpu0_fp16.engine`となるのに対し、YOLOV3では`yolov3_tiny_model_b1_gpu0_fp16.engine`という名前を期待しています。
 
-If DeepStream is able to reference an existing engine, (see [config_infer_primary_yoloV3.txt](https://github.com/toolboc/Intelligent-Video-Analytics-with-NVIDIA-Jetson-and-Microsoft-Azure/blob/master/services/DEEPSTREAM/configs/config_infer_primary_yoloV3.txt#L67) for YoloV3 or [config_infer_primary_yoloV3_tiny.txt](https://github.com/toolboc/Intelligent-Video-Analytics-with-NVIDIA-Jetson-and-Microsoft-Azure/blob/master/services/DEEPSTREAM/configs/config_infer_primary_yoloV3_tiny.txt#L66) for YoloV3Tiny), it will not need to re-build the TensorRT engine on subsequent executions which can vastly speed up the start time of your DeepStream workload.  
+DeepStreamが既存のエンジンを参照できる場合（YoloV3の[config_infer_primary_yoloV3.txt](https://github.com/toolboc/Intelligent-Video-Analytics-with-NVIDIA-Jetson-and-Microsoft-Azure/blob/master/services/DEEPSTREAM/configs/config_infer_primary_yoloV3.txt#L67)または[config_infer_primary_yoloV3_tiny.txt](https://github.com/toolboc/Intelligent-Video-Analytics-with-NVIDIA-Jetson-and-Microsoft-Azure/blob/master/services/DEEPSTREAM/configs/config_infer_primary_yoloV3_tiny.txt#L66)を参照）、その後の実行でTensorRTエンジンを再構築する必要がなくなり、DeepStreamのワークロードの開始時間を大幅に短縮することができます。
 
-If you notice low framerates or laggy performance, particularly when running YoloV3* inference with multiple video sources on a Jetson Nano. You may be able to improve performance by increasing the value of `[primary-gie]` `interval` in your DeepStream configuration.  This will set the number of consecutive frame batches to skip before performing inference execution,  improving the ability to process inference results closer to real-time by running inference less often.
+特に、Jetson Nano上で複数のビデオソースを使用してYoloV3*推論を実行しているときに、低いフレームレートやラグのあるパフォーマンスに気付いた場合は、以下の手順を実行してください。DeepStream構成の`[primary-gie]``interval`の値を増やすことで、パフォーマンスを改善できる可能性があります。これにより、推論実行を実行する前にスキップする連続したフレームバッチの数が設定され、推論を実行する頻度を減らすことで推論結果をよりリアルタイムに近い形で処理できるようになります。
+
 
 ### Module 3.6: Next Steps
 
-You should now have a working DeepStream Configuration that references a CustomVision.AI model or YoloV3*.  We are now ready to begin pushing object detection telemetry from our custom Intelligent Video Analytics solution into Microsoft Azure Services.  
+これで、CustomVision.AIモデルまたはYoloV3*を参照するDeepStream構成が動作しているはずです。これで、カスタムのIntelligent Video AnalyticsソリューションからMicrosoft Azure Servicesにオブジェクト検出のテレメトリをプッシュする準備が整いました。
